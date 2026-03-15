@@ -1,14 +1,19 @@
 from flask import Flask, render_template, request, jsonify, redirect
-from imap_service import fetch_emails, fetch_email_by_id
-from bert_predictor import predict_email
+
+# FIXED IMPORT PATHS FOR DEPLOYMENT
+from flask_app.imap_service import fetch_emails, fetch_email_by_id
+from flask_app.bert_predictor import predict_email
+
 from openai import OpenAI
 from cryptography.fernet import Fernet
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
 import re
 import os
 import json
 import bleach
+
 
 app = Flask(__name__)
 
@@ -25,18 +30,25 @@ KEY_PATH = os.path.join(os.path.dirname(__file__), "secret.key")
 
 # ---------- LOAD OR CREATE ENCRYPTION KEY ----------
 def load_key():
+
     if not os.path.exists(KEY_PATH):
+
         key = Fernet.generate_key()
+
         with open(KEY_PATH, "wb") as key_file:
             key_file.write(key)
+
     else:
+
         with open(KEY_PATH, "rb") as key_file:
             key = key_file.read()
+
     return key
 
 
 key = load_key()
 cipher = Fernet(key)
+
 
 # ---------- OPENAI CLIENT ----------
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
@@ -144,6 +156,7 @@ Keep the explanation clear, short and simple without special symbols.
         return response.choices[0].message.content
 
     except Exception as e:
+
         print("ChatGPT error:", e)
         return "AI explanation currently unavailable."
 
@@ -170,6 +183,7 @@ Provide a short cybersecurity explanation suitable for normal users.
         return response.choices[0].message.content
 
     except Exception as e:
+
         print("Risk explanation error:", e)
         return "Unable to generate explanation."
 
@@ -233,9 +247,11 @@ def inbox():
         return redirect("/setup")
 
     try:
+
         emails = fetch_emails(limit=15)
 
     except Exception as e:
+
         emails = []
         print("IMAP error:", e)
 
@@ -253,11 +269,9 @@ def view_email(email_id):
 
         email_data = fetch_email_by_id(email_id)
 
-        # ---------- SANITIZE EMAIL BODY ----------
         safe_body = sanitize_email_html(email_data.get("body", ""))
         email_data["body"] = safe_body
 
-        # ---------- ATTACHMENT SECURITY ----------
         attachments = email_data.get("attachments", [])
         dangerous = email_data.get("dangerous_attachment", False)
 
@@ -293,6 +307,7 @@ def scan():
     content = request.form.get("content", "").strip()
 
     if not content:
+
         return jsonify({
             "label": "UNKNOWN",
             "confidence": 0,

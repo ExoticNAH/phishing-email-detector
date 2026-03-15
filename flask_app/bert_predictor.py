@@ -7,19 +7,28 @@ from transformers import BertTokenizer, BertForSequenceClassification
 # -------------------------------------------------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "bert_model")
+
+# FIXED PATH FOR RENDER DEPLOYMENT
+MODEL_PATH = os.path.join(BASE_DIR, "..", "bert_model")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+print("Loading BERT model from:", MODEL_PATH)
+
 tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
 model = BertForSequenceClassification.from_pretrained(MODEL_PATH)
+
 model.to(device)
 model.eval()
+
+print("BERT model loaded successfully")
+
 
 LABELS = {
     0: "🟢 LEGIT",
     1: "🔴 PHISHING"
 }
+
 
 # -------------------------------------------------
 # Prediction function (used by Flask routes)
