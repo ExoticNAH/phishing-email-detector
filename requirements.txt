@@ -1,0 +1,8 @@
+flask
+transformers
+torch
+openai
+cryptography
+bleach
+flask-limiter
+gunicorn

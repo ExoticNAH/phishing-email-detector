@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card manual-scan-container">
+
+    <h2>🔍 Manual Email Scan</h2>
+
+    <p class="subtitle">
+        Paste the email content below to analyze whether it is legitimate or phishing using the AI detection model.
+    </p>
+
+    <textarea
+        id="manual-content"
+        rows="10"
+        placeholder="Paste full email content here (subject + body)..."
+    ></textarea>
+
+    <div class="actions">
+        <button class="btn-primary" id="manual-scan-btn">
+            🔍 Run Phishing Scan
+        </button>
+    </div>
+
+    <div id="manual-result" class="scan-box"></div>
+
+</div>
+
+
+<script>
+
+/* ---------- Explain Risk (ChatGPT) ---------- */
+
+function explainRisk(risk){
+
+    const id = "exp-" + risk.replace(/\s/g,'');
+
+    const container = document.getElementById(id);
+
+    container.innerHTML = "⏳ Getting explanation...";
+
+    fetch("/explain-risk",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+
+        body:"risk="+encodeURIComponent(risk)
+
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        container.innerHTML = data.explanation.replace(/\n/g,"<br>");
+    });
+
+}
+
+
+/* ---------- Manual Scan ---------- */
+
+document.getElementById("manual-scan-btn").addEventListener("click", function () {
+
+    const content = document.getElementById("manual-content").value.trim();
+
+    const box = document.getElementById("manual-result");
+
+    if (!content) {
+
+        box.innerHTML = "<p class='error'>⚠ Please paste email content before scanning.</p>";
+        box.classList.add("show");
+        return;
+
+    }
+
+    box.classList.remove("show");
+
+    box.innerHTML = "<p class='loading'>⏳ Running AI phishing detection...</p>";
+
+    box.classList.add("show");
+
+
+    fetch("/scan", {
+
+        method: "POST",
+
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+
+        body: "content=" + encodeURIComponent(content)
+
+    })
+
+    .then(res => {
+
+        /* -------- RATE LIMIT DETECTION -------- */
+
+        if(res.status === 429){
+
+            box.innerHTML =
+            "<p class='error'>⚠ Too many scan requests. Please wait 1 minute before scanning again.</p>";
+
+            throw new Error("Rate limit reached");
+
+        }
+
+        return res.json();
+
+    })
+
+    .then(data => {
+
+        const confidencePercent = Number(data.confidence).toFixed(2);
+
+        let risksHtml = "";
+
+        data.risks.forEach(r => {
+
+            const safeID = r.replace(/\s/g,'');
+
+            risksHtml += `
+                <li>
+                    ${r}
+
+                    <button class="explain-btn"
+                    onclick="explainRisk('${r}')">
+                    Explain
+                    </button>
+
+                    <div class="risk-explanation"
+                    id="exp-${safeID}"></div>
+
+                </li>
+            `;
+
+        });
+
+
+        let labelColor = data.label === "PHISHING"
+            ? "#ff6b6b"
+            : "#7effb4";
+
+
+        box.innerHTML = `
+
+            <h3>🧠 AI Scan Result</h3>
+
+            <p class="result-label"
+            style="color:${labelColor}; font-size:18px; text-align:left;">
+
+                Classification: <strong>${data.label}</strong>
+
+            </p>
+
+            <p class="confidence" style="text-align:left;">
+
+                Confidence Level:
+                <strong>${confidencePercent}%</strong>
+
+            </p>
+
+            <div class="confidence-bar">
+
+                <div class="confidence-fill"
+                style="width:${confidencePercent}%"></div>
+
+            </div>
+
+            <hr>
+
+            <h4 style="text-align:left;">⚠ Detected Risk Factors</h4>
+
+            <ul style="text-align:left;">
+                ${risksHtml || "<li>No significant risk detected</li>"}
+            </ul>
+
+            <h4 style="text-align:left;">🤖 AI Security Analysis</h4>
+
+            <div class="ai-analysis-box">
+
+                <p style="text-align:left; line-height:1.6;">
+                    ${data.analysis.replace(/\n/g,"<br>")}
+                </p>
+
+            </div>
+
+        `;
+
+    })
+
+    .catch(err => {
+
+        if(err.message !== "Rate limit reached"){
+
+            box.innerHTML =
+            "<p class='error'>❌ Error occurred while scanning.</p>";
+
+        }
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

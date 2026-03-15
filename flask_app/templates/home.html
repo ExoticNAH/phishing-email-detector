@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+
+<div class="card dashboard">
+
+  <h1 class="dashboard-title">
+      <img src="{{ url_for('static', filename='logo.png') }}" class="title-logo">
+      Phishing Email Detection System
+  </h1>
+
+  <p class="subtitle">
+      AI-powered email security using machine learning
+  </p>
+
+  <div class="action-buttons">
+
+    <a href="/inbox" class="btn">📥 View Inbox</a>
+
+    <a href="/manual" class="btn">✍️ Manual Scan</a>
+
+    <a href="/setup" class="btn">⚙ Email Settings</a>
+
+  </div>
+
+  <div class="status-grid">
+
+    <div class="status-card">
+      <h3>🤖 AI Model</h3>
+      <p class="status-ok">Loaded</p>
+    </div>
+
+    <div class="status-card">
+      <h3>📧 Email Connection</h3>
+      <p class="status-ok">Configured</p>
+    </div>
+
+    <div class="status-card">
+      <h3>🛡 Detection Engine</h3>
+      <p class="status-ok">Active</p>
+    </div>
+
+  </div>
+
+  <p class="system-desc">
+    This system analyzes email content using a trained AI model to detect potential phishing attacks.
+  </p>
+
+</div>
+
+</div>
+
+{% endblock %}

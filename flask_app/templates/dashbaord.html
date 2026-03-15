@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Manual Email Scan</h2>
+
+<textarea id="manual-content" rows="10" placeholder="Paste email content here..."></textarea>
+<br><br>
+
+<button class="btn-primary" id="manual-scan-btn">
+    Phishing Scan
+</button>
+
+<div id="manual-result" class="scan-box"></div>
+
+<script>
+document.getElementById("manual-scan-btn").addEventListener("click", function () {
+    const content = document.getElementById("manual-content").value;
+    const box = document.getElementById("manual-result");
+
+    box.classList.remove("show");
+    box.innerHTML = "";
+
+    fetch("/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "content=" + encodeURIComponent(content)
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        let risksHtml = "";
+        data.risks.forEach(r => {
+            risksHtml += `<li>${r}</li>`;
+        });
+
+        let recHtml = "";
+        data.recommendation.forEach(r => {
+            recHtml += `<li>${r}</li>`;
+        });
+
+        box.innerHTML = `
+            <h3>Scan Result</h3>
+            <p><strong>${data.label}</strong></p>
+            <p>Confidence: ${data.confidence}%</p>
+
+            <hr>
+            <h4>Detected Risk Factors</h4>
+            <ul>${risksHtml || "<li>No significant risk detected</li>"}</ul>
+
+            <h4>AI Recommended Action</h4>
+            <ul>${recHtml}</ul>
+        `;
+
+        box.classList.add("show");
+    });
+});
+</script>
+
+{% endblock %}

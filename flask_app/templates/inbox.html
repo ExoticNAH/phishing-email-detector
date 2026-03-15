@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+
+    <div class="inbox-header">
+        <a href="/" class="btn">← Dashboard</a>
+        <h2>📥 Email Inbox</h2>
+        <span class="refresh-indicator">Auto refresh: 15s</span>
+    </div>
+
+    <div id="inbox-container">
+
+        {% if emails %}
+            {% for email in emails %}
+                <div class="email-item clickable"
+                     onclick="window.location.href='/email/{{ email.id }}'">
+
+                    <div class="email-from">
+                        📧 {{ email.from }}
+                    </div>
+
+                    <div class="email-subject">
+                        {{ email.subject }}
+                    </div>
+
+                </div>
+            {% endfor %}
+        {% else %}
+
+            <p class="empty-inbox">
+                No emails found.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<script>
+
+function refreshInbox(){
+    fetch("/inbox")
+    .then(res => res.text())
+    .then(html => {
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        const newInbox = doc.querySelector("#inbox-container");
+
+        document.querySelector("#inbox-container").innerHTML =
+            newInbox.innerHTML;
+
+    });
+}
+
+/* Auto refresh every 15 seconds */
+setInterval(refreshInbox, 15000);
+
+</script>
+
+{% endblock %}

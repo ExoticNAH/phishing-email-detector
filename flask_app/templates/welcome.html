@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="welcome-screen">
+
+    <img src="{{ url_for('static', filename='logo.png') }}" class="welcome-logo">
+
+    <h1 class="welcome-title">
+        Phishing Email Detection System
+    </h1>
+
+    <p class="welcome-subtitle">
+        AI-powered email security using machine learning
+    </p>
+
+    <p class="loading-dots">Initializing system</p>
+
+</div>
+
+<script>
+
+setTimeout(function(){
+
+    fetch("/check-config")
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.configured){
+            window.location.href = "/home";
+        }
+        else{
+            window.location.href = "/setup";
+        }
+
+    });
+
+}, 3000);
+
+</script>
+
+{% endblock %}
