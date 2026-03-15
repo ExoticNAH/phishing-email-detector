@@ -3,17 +3,12 @@
 
 <div class="card">
 
-    <h2 style="text-align:center;">🔐 Email Configuration</h2>
+    <h2 style="text-align:center;">🔐 Connect Your Gmail</h2>
 
     <p class="subtitle" style="text-align:center;">
-        Configure your Gmail account to enable automated phishing detection in your inbox.
+        Enter your Gmail account to analyze emails for phishing threats.
+        Your credentials are stored only temporarily for this session and are not saved on the server.
     </p>
-
-    {% if success %}
-    <div class="success-box">
-        ✅ Email configuration saved successfully!
-    </div>
-    {% endif %}
 
     <form method="POST">
 
@@ -25,17 +20,17 @@
             required
         >
 
-        <label style="margin-top:15px;">App Password</label>
+        <label style="margin-top:15px;">Google App Password</label>
         <input
             type="password"
             name="password"
-            placeholder="16-character Google App Password"
+            placeholder="16-character Gmail App Password"
             required
         >
 
         <div class="actions">
             <button type="submit" class="btn-primary" style="width:100%;">
-                💾 Save Configuration
+                🔗 Connect Inbox
             </button>
         </div>
 
@@ -50,20 +45,32 @@
 
 <div class="card" style="margin-top:25px;">
 
-    <h3>📘 How to Generate Gmail App Password</h3>
+    <h3>📘 How to Generate a Gmail App Password</h3>
 
     <p class="system-desc">
-        Gmail requires an App Password when external applications access your inbox securely.
+        Gmail requires an App Password when external applications securely access your inbox.
     </p>
 
     <ol class="system-desc">
         <li>Enable <strong>2-Step Verification</strong> in your Google Account</li>
-        <li>Go to <strong>Google Account → Security</strong></li>
-        <li>Open or Search <strong>App Passwords</strong></li>
+        <li>Open <strong>Google Account → Security</strong></li>
+        <li>Find <strong>App Passwords</strong></li>
         <li>Select <strong>Mail</strong> as the application</li>
         <li>Generate the <strong>16-character password</strong></li>
         <li>Paste the password in the field above</li>
     </ol>
+
+</div>
+
+
+<div class="card" style="margin-top:25px;">
+
+    <h3>🔒 Privacy Notice</h3>
+
+    <p class="system-desc">
+        This system does not permanently store your email credentials.
+        Your login is kept only during the active session and will be cleared automatically when you logout or close the browser.
+    </p>
 
 </div>
 

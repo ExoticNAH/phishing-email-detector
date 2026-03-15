@@ -1,12 +1,7 @@
 import imaplib
 import email
 from email.header import decode_header
-from cryptography.fernet import Fernet
-import os
-import json
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
-KEY_PATH = os.path.join(os.path.dirname(__file__), "secret.key")
 
 # ---------- DANGEROUS ATTACHMENT EXTENSIONS ----------
 DANGEROUS_EXTENSIONS = [
@@ -15,46 +10,11 @@ DANGEROUS_EXTENSIONS = [
 ]
 
 
-# ---------- LOAD ENCRYPTION KEY ----------
-def _load_key():
-
-    if not os.path.exists(KEY_PATH):
-        raise Exception("Encryption key not found. Run setup first.")
-
-    with open(KEY_PATH, "rb") as key_file:
-        return key_file.read()
-
-
-# ---------- LOAD AND DECRYPT CREDENTIALS ----------
-def _load_credentials():
-
-    if not os.path.exists(CONFIG_PATH):
-        raise Exception("Email credentials not configured.")
-
-    with open(CONFIG_PATH, "r") as f:
-        config = json.load(f)
-
-    email_account = config.get("email")
-    encrypted_password = config.get("password")
-
-    key = _load_key()
-    cipher = Fernet(key)
-
-    try:
-        decrypted_password = cipher.decrypt(encrypted_password.encode()).decode()
-    except Exception:
-        raise Exception("Failed to decrypt stored email password.")
-
-    return email_account, decrypted_password
-
-
 # ---------- CONNECT TO GMAIL ----------
-def _connect():
-
-    EMAIL, APP_PASSWORD = _load_credentials()
+def _connect(email_account, app_password):
 
     imap = imaplib.IMAP4_SSL("imap.gmail.com")
-    imap.login(EMAIL, APP_PASSWORD)
+    imap.login(email_account, app_password)
     imap.select("INBOX")
 
     return imap
@@ -75,9 +35,9 @@ def _decode_header_value(value):
 
 
 # ---------- FETCH EMAIL LIST ----------
-def fetch_emails(limit=10):
+def fetch_emails(email_account, app_password, limit=10):
 
-    imap = _connect()
+    imap = _connect(email_account, app_password)
 
     status, messages = imap.search(None, "ALL")
 
@@ -113,9 +73,9 @@ def fetch_emails(limit=10):
 
 
 # ---------- FETCH SINGLE EMAIL ----------
-def fetch_email_by_id(email_id):
+def fetch_email_by_id(email_account, app_password, email_id):
 
-    imap = _connect()
+    imap = _connect(email_account, app_password)
 
     status, msg_data = imap.fetch(email_id.encode(), "(RFC822)")
 

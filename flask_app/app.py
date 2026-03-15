@@ -1,21 +1,25 @@
-from flask import Flask, render_template, request, jsonify, redirect
+from flask import Flask, render_template, request, jsonify, redirect, session
 
 # FIXED IMPORT PATHS FOR DEPLOYMENT
 from flask_app.imap_service import fetch_emails, fetch_email_by_id
 from flask_app.bert_predictor import predict_email
 
 from openai import OpenAI
-from cryptography.fernet import Fernet
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 import re
 import os
-import json
 import bleach
+from datetime import timedelta
 
 
 app = Flask(__name__)
+
+# ---------- SESSION CONFIG ----------
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
+app.permanent_session_lifetime = timedelta(minutes=30)
+
 
 # ---------- RATE LIMITER ----------
 limiter = Limiter(
@@ -23,31 +27,6 @@ limiter = Limiter(
     app=app,
     default_limits=["200 per hour"]
 )
-
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
-KEY_PATH = os.path.join(os.path.dirname(__file__), "secret.key")
-
-
-# ---------- LOAD OR CREATE ENCRYPTION KEY ----------
-def load_key():
-
-    if not os.path.exists(KEY_PATH):
-
-        key = Fernet.generate_key()
-
-        with open(KEY_PATH, "wb") as key_file:
-            key_file.write(key)
-
-    else:
-
-        with open(KEY_PATH, "rb") as key_file:
-            key = key_file.read()
-
-    return key
-
-
-key = load_key()
-cipher = Fernet(key)
 
 
 # ---------- OPENAI CLIENT ----------
@@ -188,67 +167,63 @@ Provide a short cybersecurity explanation suitable for normal users.
         return "Unable to generate explanation."
 
 
-# ---------- FIRST-TIME SETUP CHECK ----------
-def is_configured():
-    return os.path.exists(CONFIG_PATH)
-
-
 # ---------- WELCOME SCREEN ----------
 @app.route("/")
 def welcome():
     return render_template("welcome.html")
 
 
-# ---------- CONFIG CHECK ----------
-@app.route("/check-config")
-def check_config():
-    return jsonify({"configured": is_configured()})
-
-
 # ---------- HOME DASHBOARD ----------
 @app.route("/home")
 def home():
 
-    if not is_configured():
+    if "email" not in session:
         return redirect("/setup")
 
     return render_template("home.html")
 
 
-# ---------- SETUP ----------
+# ---------- SETUP (LOGIN EMAIL) ----------
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
-
-    success = request.args.get("success")
 
     if request.method == "POST":
 
         email = request.form.get("email")
         password = request.form.get("password")
 
-        encrypted_password = cipher.encrypt(password.encode()).decode()
+        session["email"] = email
+        session["password"] = password
 
-        with open(CONFIG_PATH, "w") as f:
-            json.dump({
-                "email": email,
-                "password": encrypted_password
-            }, f)
+        session.permanent = True
 
-        return redirect("/setup?success=1")
+        return redirect("/home")
 
-    return render_template("setup.html", success=success)
+    return render_template("setup.html")
+
+
+# ---------- LOGOUT ----------
+@app.route("/logout")
+def logout():
+
+    session.clear()
+
+    return redirect("/")
 
 
 # ---------- INBOX ----------
 @app.route("/inbox")
 def inbox():
 
-    if not is_configured():
+    if "email" not in session:
         return redirect("/setup")
+
+    email = session["email"]
+    password = session["password"]
 
     try:
 
-        emails = fetch_emails(limit=15)
+        emails = fetch_emails(email, password, limit=15)
 
     except Exception as e:
 
@@ -262,21 +237,18 @@ def inbox():
 @app.route("/email/<email_id>")
 def view_email(email_id):
 
-    if not is_configured():
+    if "email" not in session:
         return redirect("/setup")
+
+    email = session["email"]
+    password = session["password"]
 
     try:
 
-        email_data = fetch_email_by_id(email_id)
+        email_data = fetch_email_by_id(email, password, email_id)
 
         safe_body = sanitize_email_html(email_data.get("body", ""))
         email_data["body"] = safe_body
-
-        attachments = email_data.get("attachments", [])
-        dangerous = email_data.get("dangerous_attachment", False)
-
-        email_data["attachments"] = attachments
-        email_data["dangerous_attachment"] = dangerous
 
     except Exception as e:
 
@@ -318,6 +290,7 @@ def scan():
     try:
 
         label, confidence = predict_email(content)
+
         label = label.strip().upper()
         confidence = round(confidence)
 

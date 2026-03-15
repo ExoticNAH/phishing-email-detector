@@ -14,13 +14,19 @@
       AI-powered email security using machine learning
   </p>
 
+  <p class="system-desc" style="margin-bottom:20px;">
+      Connected Email: <strong>{{ session.email }}</strong>
+  </p>
+
   <div class="action-buttons">
 
     <a href="/inbox" class="btn">📥 View Inbox</a>
 
     <a href="/manual" class="btn">✍️ Manual Scan</a>
 
-    <a href="/setup" class="btn">⚙ Email Settings</a>
+    <a href="/setup" class="btn">🔄 Reconnect Email</a>
+
+    <a href="/logout" class="btn">🚪 Logout</a>
 
   </div>
 
@@ -33,12 +39,12 @@
 
     <div class="status-card">
       <h3>📧 Email Connection</h3>
-      <p class="status-ok">Configured</p>
+      <p class="status-ok">Active</p>
     </div>
 
     <div class="status-card">
       <h3>🛡 Detection Engine</h3>
-      <p class="status-ok">Active</p>
+      <p class="status-ok">Running</p>
     </div>
 
   </div>
