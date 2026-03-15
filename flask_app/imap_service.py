@@ -17,6 +17,7 @@ DANGEROUS_EXTENSIONS = [
 
 # ---------- LOAD ENCRYPTION KEY ----------
 def _load_key():
+
     if not os.path.exists(KEY_PATH):
         raise Exception("Encryption key not found. Run setup first.")
 
@@ -59,29 +60,50 @@ def _connect():
     return imap
 
 
+# ---------- SAFE HEADER DECODER ----------
+def _decode_header_value(value):
+
+    if not value:
+        return ""
+
+    decoded, encoding = decode_header(value)[0]
+
+    if isinstance(decoded, bytes):
+        return decoded.decode(encoding or "utf-8", errors="ignore")
+
+    return decoded
+
+
 # ---------- FETCH EMAIL LIST ----------
 def fetch_emails(limit=10):
 
     imap = _connect()
 
-    _, messages = imap.search(None, "ALL")
+    status, messages = imap.search(None, "ALL")
+
+    if status != "OK":
+        imap.logout()
+        return []
+
     mail_ids = messages[0].split()[-limit:]
 
     emails = []
 
     for mail_id in mail_ids:
 
-        _, msg_data = imap.fetch(mail_id, "(RFC822)")
+        status, msg_data = imap.fetch(mail_id, "(RFC822)")
+
+        if status != "OK":
+            continue
+
         msg = email.message_from_bytes(msg_data[0][1])
 
-        subject, enc = decode_header(msg["Subject"])[0]
-
-        if isinstance(subject, bytes):
-            subject = subject.decode(enc or "utf-8", errors="ignore")
+        subject = _decode_header_value(msg.get("Subject"))
+        sender = msg.get("From")
 
         emails.append({
             "id": mail_id.decode(),
-            "from": msg.get("From"),
+            "from": sender,
             "subject": subject
         })
 
@@ -95,7 +117,12 @@ def fetch_email_by_id(email_id):
 
     imap = _connect()
 
-    _, msg_data = imap.fetch(email_id.encode(), "(RFC822)")
+    status, msg_data = imap.fetch(email_id.encode(), "(RFC822)")
+
+    if status != "OK":
+        imap.logout()
+        raise Exception("Failed to fetch email")
+
     msg = email.message_from_bytes(msg_data[0][1])
 
     body = ""
@@ -109,33 +136,41 @@ def fetch_email_by_id(email_id):
             content_type = part.get_content_type()
             filename = part.get_filename()
 
-            # ---------- EXTRACT EMAIL BODY ----------
+            # ---------- EMAIL BODY ----------
             if content_type == "text/plain" and not filename:
-                body = part.get_payload(decode=True).decode(errors="ignore")
 
-            # ---------- DETECT ATTACHMENTS ----------
+                payload = part.get_payload(decode=True)
+
+                if payload:
+                    body = payload.decode(errors="ignore")
+
+            elif content_type == "text/html" and not body:
+
+                payload = part.get_payload(decode=True)
+
+                if payload:
+                    body = payload.decode(errors="ignore")
+
+            # ---------- ATTACHMENT DETECTION ----------
             if filename:
 
-                decoded_name, enc = decode_header(filename)[0]
-
-                if isinstance(decoded_name, bytes):
-                    decoded_name = decoded_name.decode(enc or "utf-8", errors="ignore")
+                decoded_name = _decode_header_value(filename)
 
                 attachments.append(decoded_name)
 
-                # check if attachment is dangerous
                 for ext in DANGEROUS_EXTENSIONS:
+
                     if decoded_name.lower().endswith(ext):
                         dangerous_found = True
 
     else:
 
-        body = msg.get_payload(decode=True).decode(errors="ignore")
+        payload = msg.get_payload(decode=True)
 
-    subject, enc = decode_header(msg["Subject"])[0]
+        if payload:
+            body = payload.decode(errors="ignore")
 
-    if isinstance(subject, bytes):
-        subject = subject.decode(enc or "utf-8", errors="ignore")
+    subject = _decode_header_value(msg.get("Subject"))
 
     imap.logout()
 
