@@ -16,12 +16,8 @@
 
     <!-- EMAIL BODY -->
     <div class="email-body">
-        <div id="email-content" style="
-            white-space: pre-wrap;
-            line-height: 1.6;
-            word-wrap: break-word;
-        ">
-            {{ email.body }}
+        <div id="email-content" class="email-text">
+            {{ email.body | replace('\n', '<br>') | safe }}
         </div>
     </div>
 
@@ -61,7 +57,7 @@ function extractLinks(text){
 }
 
 
-/* ---------- Highlight Words + Links ---------- */
+/* ---------- Highlight Words ---------- */
 function highlightContent(text){
 
     const words = [
@@ -78,7 +74,6 @@ function highlightContent(text){
         `<span class="phishing-word">$1</span>`);
     });
 
-    // Highlight links
     result = result.replace(/(https?:\/\/[^\s]+)/g,
         `<span class="phishing-link">$1</span>`);
 
@@ -96,10 +91,6 @@ function checkDomain(url){
             return `⚠ Suspicious domain: ${domain}`;
         }
 
-        if(domain.replace(/[a-z]/g,'').length > 3){
-            return `⚠ Possibly fake domain: ${domain}`;
-        }
-
         return `✔ Domain looks normal: ${domain}`;
 
     }catch{
@@ -115,7 +106,7 @@ function explainRisk(risk){
 
     const container = document.getElementById(id);
 
-    container.innerHTML = "⏳ Getting explanation...";
+    container.innerHTML = "⏳ Loading...";
 
     fetch("/explain-risk",{
         method:"POST",
@@ -142,8 +133,7 @@ document.getElementById("scan-btn").addEventListener("click", function () {
     const rawText = document.getElementById("email-content").innerText;
     const box = document.getElementById("scan-result");
 
-    box.innerHTML = "⏳ Running AI scan...";
-
+    box.innerHTML = "<p class='loading'>⏳ Running AI scan...</p>";
 
     fetch("/scan", {
         method: "POST",
@@ -157,62 +147,81 @@ document.getElementById("scan-btn").addEventListener("click", function () {
 
         const confidence = Number(data.confidence).toFixed(2);
 
+        /* ---------- LABEL ---------- */
+        let labelClass = data.label === "PHISHING"
+            ? "label-danger"
+            : "label-safe";
+
+        /* ---------- RISKS ---------- */
         let risksHtml = data.risks.map(r=>{
             const id = r.replace(/\s/g,'');
+
             return `
-            <li>${r}
-            <button onclick="explainRisk('${r}')">Explain</button>
-            <div id="exp-${id}"></div>
+            <li class="risk-item">
+                ${r}
+                <button class="explain-btn"
+                onclick="explainRisk('${r}')">Explain</button>
+                <div id="exp-${id}" class="risk-explanation"></div>
             </li>`;
         }).join("");
 
-        // 🔥 Risk Score
-        let riskScore = data.label === "PHISHING"
-            ? confidence
-            : (100 - confidence);
-
-        // 🔗 Links
+        /* ---------- LINKS ---------- */
         let links = extractLinks(rawText);
 
         let linksHtml = links.map(l=>
-            `<li>${l}<br><small>${checkDomain(l)}</small></li>`
+            `<li>
+                ${l}
+                <br>
+                <small>${checkDomain(l)}</small>
+            </li>`
         ).join("");
+
+        /* ---------- ANALYSIS FORMAT ---------- */
+        let formattedAnalysis = data.analysis
+            .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
+            .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
+            .replace(/\n/g,"<br>");
 
         box.innerHTML = `
 
         <h3>🧠 AI Result</h3>
 
-        <p style="color:${data.label==="PHISHING"?"red":"green"}">
-            <strong>${data.label}</strong>
+        <p class="result-label ${labelClass}">
+            ${data.label}
         </p>
 
-        <p>Confidence: ${confidence}%</p>
+        <p class="confidence-text">
+            Confidence: ${confidence}%
+        </p>
 
         <div class="confidence-bar">
             <div class="confidence-fill"
-            style="width:${riskScore}%"></div>
+            style="width:${confidence}%"></div>
         </div>
+
+        <hr>
 
         <h4>⚠ Risks</h4>
-        <ul>${risksHtml || "<li>None</li>"}</ul>
+        <ul class="risk-list">
+            ${risksHtml || "<li>No risk detected</li>"}
+        </ul>
 
         <h4>🔗 Links</h4>
-        <ul>${linksHtml || "<li>No links found</li>"}</ul>
+        <ul>
+            ${linksHtml || "<li>No links found</li>"}
+        </ul>
 
-        <h4>📌 Highlighted Email</h4>
-        <div style="white-space:pre-wrap; background:#111; padding:10px;">
-            ${highlightContent(rawText)}
+        <h4>📊 Analysis</h4>
+        <div class="analysis-box">
+            ${formattedAnalysis}
         </div>
-
-        <h4>🤖 Analysis</h4>
-        <p>${data.analysis}</p>
 
         `;
 
     })
 
     .catch(()=>{
-        box.innerHTML = "❌ Scan failed";
+        box.innerHTML = "<p class='error'>❌ Scan failed</p>";
     })
 
     .finally(()=>{

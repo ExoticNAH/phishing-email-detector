@@ -4,7 +4,7 @@
 <div class="card">
 
     <div class="inbox-header">
-        <a href="/" class="btn">← Dashboard</a>
+        <a href="/home" class="btn">← Dashboard</a>
         <h2>📥 Email Inbox</h2>
         <span class="refresh-indicator">Auto refresh: 15s</span>
     </div>
@@ -29,6 +29,7 @@
                 <div class="email-item clickable {% if suspicious %}suspicious-email{% endif %}"
                      onclick="window.location.href='/email/{{ email.id }}'">
 
+                    <!-- LEFT SIDE -->
                     <div class="email-left">
 
                         <div class="email-from">
@@ -41,12 +42,13 @@
 
                     </div>
 
+                    <!-- RIGHT SIDE -->
                     <div class="email-right">
 
                         {% if suspicious %}
-                            <span class="badge-risk">⚠ Suspicious</span>
+                            <span class="badge badge-risk">⚠ Suspicious</span>
                         {% else %}
-                            <span class="badge-safe">✔ Safe</span>
+                            <span class="badge badge-safe">✔ Safe</span>
                         {% endif %}
 
                     </div>

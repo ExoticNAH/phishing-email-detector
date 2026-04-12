@@ -8,7 +8,6 @@ from openai import OpenAI
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-import re
 import os
 import bleach
 from datetime import timedelta
@@ -24,15 +23,13 @@ app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE="Lax",
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=15),
-
-    # 🔥 IMPORTANT FIX (CSRF ERROR FIX)
     WTF_CSRF_SSL_STRICT=False
 )
 
 # ---------- CSRF ----------
 csrf = CSRFProtect(app)
 
-# ---------- SESSION AUTO REFRESH ----------
+# ---------- SESSION ----------
 @app.before_request
 def make_session_permanent():
     session.permanent = True
@@ -52,6 +49,9 @@ client = OpenAI(api_key=OPENAI_KEY)
 
 # ---------- SANITIZATION ----------
 def sanitize_email_html(html_content):
+
+    if not html_content:
+        return ""
 
     script_detected = "<script" in html_content.lower()
 
@@ -79,26 +79,27 @@ def sanitize_email_html(html_content):
 def extract_risks(text):
 
     risks = []
+    t = text.lower()
 
-    if any(w in text.lower() for w in ["urgent","immediately","verify","suspended"]):
+    if any(w in t for w in ["urgent","immediately","verify","suspended"]):
         risks.append("Urgency language detected")
 
-    if "http" in text.lower():
+    if "http" in t:
         risks.append("Suspicious link detected")
 
-    if any(w in text.lower() for w in ["password","login"]):
+    if any(w in t for w in ["password","login"]):
         risks.append("Credential request detected")
 
-    if "<script" in text.lower():
+    if "<script" in t:
         risks.append("Possible XSS script")
 
-    if "attachment" in text.lower():
+    if "attachment" in t:
         risks.append("Suspicious attachment")
 
-    return risks
+    return list(set(risks))  # remove duplicates
 
 
-# ---------- AI ANALYSIS ----------
+# ---------- AI ANALYSIS (CLEAN + STRUCTURED) ----------
 def generate_ai_analysis(email_content, label, risks):
 
     try:
@@ -107,20 +108,35 @@ def generate_ai_analysis(email_content, label, risks):
             messages=[{
                 "role": "user",
                 "content": f"""
-Email classified as: {label}
-Risks: {risks}
+You are a cybersecurity analyst.
 
-Explain briefly and give advice.
+Email classification: {label}
+Detected risks: {risks}
+
+Respond in this EXACT format:
+
+Explanation:
+- Short explanation (2-3 lines)
+- if you detect any types of malicious types of attempt like xss attack etc u can mention it
+
+Advice:
+- 1 clear action
+- 1 clear action
+- 1 clear action (max 4)
+
+Do NOT repeat content.
+Do NOT add extra sections.
 """
             }],
-            temperature=0.2
+            temperature=0.2,
+            max_tokens=300
         )
 
-        return response.choices[0].message.content
+        return response.choices[0].message.content.strip()
 
     except Exception as e:
         print("AI error:", e)
-        return "AI unavailable"
+        return "AI analysis unavailable."
 
 
 # ---------- ROUTES ----------
@@ -145,12 +161,10 @@ def setup():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # 🔥 SESSION FIXATION PROTECTION
         session.clear()
 
         session["email"] = email
         session["password"] = password
-        session.permanent = True
 
         return redirect("/home")
 
@@ -233,14 +247,18 @@ def scan():
         })
 
     try:
+        # 🔍 ML MODEL
         label, confidence = predict_email(content)
 
+        # ⚠️ RISKS
         risks = extract_risks(content)
+
+        # 🤖 ALWAYS USE OPENAI (as requested)
         analysis = generate_ai_analysis(content, label, risks)
 
         return jsonify({
             "label": label.upper(),
-            "confidence": round(confidence),
+            "confidence": round(float(confidence), 2),
             "risks": risks,
             "analysis": analysis
         })
@@ -266,7 +284,9 @@ def explain_risk():
     if not risk:
         return jsonify({"explanation":"No risk provided"})
 
-    return jsonify({"explanation": generate_ai_analysis(risk,"INFO",[])})
+    explanation = generate_ai_analysis(risk, "INFO", [])
+
+    return jsonify({"explanation": explanation})
 
 
 # ---------- RUN ----------

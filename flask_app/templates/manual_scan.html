@@ -13,7 +13,6 @@
         id="manual-content"
         rows="10"
         placeholder="Paste email content here..."
-        style="width:100%; padding:10px;"
     ></textarea>
 
     <div class="actions">
@@ -30,20 +29,17 @@
 <script>
 
 /* ---------- Extract Links ---------- */
-
 function extractLinks(text){
-    const regex = /(https?:\/\/[^\s]+)/g;
-    return text.match(regex) || [];
+    return text.match(/https?:\/\/[^\s]+/g) || [];
 }
 
 
-/* ---------- Highlight Words + Links ---------- */
-
+/* ---------- Highlight Words ---------- */
 function highlightContent(text){
 
     const words = [
         "urgent","verify","password","login",
-        "click","account","bank","confirm"
+        "click","account","bank","confirm","suspended"
     ];
 
     let result = text;
@@ -54,7 +50,6 @@ function highlightContent(text){
         `<span class="phishing-word">$1</span>`);
     });
 
-    // Highlight links
     result = result.replace(/(https?:\/\/[^\s]+)/g,
         `<span class="phishing-link">$1</span>`);
 
@@ -62,20 +57,14 @@ function highlightContent(text){
 }
 
 
-/* ---------- Detect Suspicious Domain ---------- */
-
+/* ---------- Domain Check ---------- */
 function checkDomain(url){
 
     try{
         const domain = new URL(url).hostname;
 
-        // simple heuristic
-        if(domain.includes("secure") || domain.includes("verify")){
+        if(domain.includes("verify") || domain.includes("secure")){
             return `⚠ Suspicious domain: ${domain}`;
-        }
-
-        if(domain.replace(/[a-z]/g,'').length > 3){
-            return `⚠ Possibly fake domain: ${domain}`;
         }
 
         return `✔ Domain looks normal: ${domain}`;
@@ -86,7 +75,7 @@ function checkDomain(url){
 }
 
 
-/* ---------- Scan ---------- */
+/* ---------- SCAN ---------- */
 
 document.getElementById("manual-scan-btn").addEventListener("click", function(){
 
@@ -97,13 +86,12 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
     const box = document.getElementById("manual-result");
 
     if(!content){
-        box.innerHTML = "⚠ Please enter email content";
+        box.innerHTML = "<p class='error'>⚠ Please enter email content</p>";
         btn.disabled = false;
         return;
     }
 
-    box.innerHTML = "⏳ Scanning...";
-
+    box.innerHTML = "<p class='loading'>⏳ Running AI scan...</p>";
 
     fetch("/scan",{
         method:"POST",
@@ -115,33 +103,53 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
 
     .then(data=>{
 
+        const confidence = Number(data.confidence).toFixed(2);
+
+        /* ---------- LABEL ---------- */
+        let labelClass = data.label === "PHISHING"
+            ? "label-danger"
+            : "label-safe";
+
+        /* ---------- RISKS ---------- */
+        let risksHtml = data.risks.map(r =>
+            `<li>${r}</li>`
+        ).join("");
+
+        /* ---------- LINKS ---------- */
         let links = extractLinks(content);
 
-        let linksHtml = links.map(l=>
+        let linksHtml = links.map(l =>
             `<li>${l}<br><small>${checkDomain(l)}</small></li>`
         ).join("");
 
-        // Risk Score
-        let riskScore = data.label === "PHISHING" ? data.confidence : (100 - data.confidence);
+        /* ---------- FORMAT ANALYSIS ---------- */
+        let formattedAnalysis = data.analysis
+            .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
+            .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
+            .replace(/\n/g,"<br>");
 
         box.innerHTML = `
 
         <h3>🧠 AI Result</h3>
 
-        <p style="color:${data.label==="PHISHING"?"red":"green"}">
-            <strong>${data.label}</strong>
+        <p class="result-label ${labelClass}">
+            ${data.label}
         </p>
 
-        <p>Confidence: ${data.confidence}%</p>
+        <p class="confidence-text">
+            Confidence: ${confidence}%
+        </p>
 
         <div class="confidence-bar">
             <div class="confidence-fill"
-            style="width:${riskScore}%"></div>
+            style="width:${confidence}%"></div>
         </div>
+
+        <hr>
 
         <h4>⚠ Risk Factors</h4>
         <ul>
-            ${data.risks.join("") || "<li>None</li>"}
+            ${risksHtml || "<li>No risk detected</li>"}
         </ul>
 
         <h4>🔗 Detected Links</h4>
@@ -150,15 +158,21 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
         </ul>
 
         <h4>📌 Highlighted Content</h4>
-        <div style="white-space:pre-wrap; background:#111; padding:10px;">
+        <div class="highlight-box">
             ${highlightContent(content)}
         </div>
 
-        <h4>🤖 AI Analysis</h4>
-        <p>${data.analysis}</p>
+        <h4>📊 AI Analysis</h4>
+        <div class="analysis-box">
+            ${formattedAnalysis}
+        </div>
 
         `;
 
+    })
+
+    .catch(()=>{
+        box.innerHTML = "<p class='error'>❌ Scan failed</p>";
     })
 
     .finally(()=>{
