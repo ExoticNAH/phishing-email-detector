@@ -6,15 +6,16 @@
     <h2 style="text-align:center;">🔐 Connect Your Gmail</h2>
 
     <p class="subtitle" style="text-align:center;">
-        Enter your Gmail account to analyze emails for phishing threats.
-        Your credentials are used only for this session and are not stored permanently.
+        Enter your Gmail account to analyze emails for phishing threats.<br>
+        <strong>Your credentials are NOT stored permanently.</strong>
     </p>
 
-    <form method="POST" autocomplete="off">
+    <form method="POST" autocomplete="off" style="max-width:500px; margin:0 auto;">
 
-        <!-- ✅ CSRF TOKEN -->
+        <!-- CSRF -->
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+        <!-- EMAIL -->
         <label>Email Address</label>
         <input 
             type="email"
@@ -22,8 +23,10 @@
             placeholder="example@gmail.com"
             required
             autocomplete="email"
+            class="input-field"
         >
 
+        <!-- PASSWORD -->
         <label style="margin-top:15px;">Google App Password</label>
         <input
             type="password"
@@ -31,14 +34,14 @@
             placeholder="16-character Gmail App Password"
             required
             autocomplete="new-password"
+            class="input-field"
         >
 
-        <!-- ✅ Extra safety hint -->
-        <small style="color:#888;">
-            Use a Gmail App Password, not your main password.
+        <small class="input-hint">
+            🔐 Use a Gmail App Password — never your real password.
         </small>
 
-        <div class="actions">
+        <div class="actions" style="margin-top:20px;">
             <button type="submit" class="btn-primary" style="width:100%;">
                 🔗 Connect Inbox
             </button>
@@ -53,43 +56,57 @@
 </div>
 
 
-<div class="card" style="margin-top:25px;">
+<!-- ========================= -->
+<!-- GUIDE -->
+<!-- ========================= -->
+
+<div class="card">
 
     <h3>📘 How to Generate a Gmail App Password</h3>
 
     <p class="system-desc">
-        Gmail requires an App Password when external applications securely access your inbox.
+        Gmail requires an App Password for secure access by external systems.
     </p>
 
     <ol class="system-desc">
-        <li>Enable <strong>2-Step Verification</strong> in your Google Account</li>
-        <li>Open <strong>Google Account → Security</strong></li>
-        <li>Find <strong>App Passwords</strong></li>
-        <li>Select <strong>Mail</strong> as the application</li>
-        <li>Generate the <strong>16-character password</strong></li>
-        <li>Paste the password in the field above</li>
+        <li>Enable <strong>2-Step Verification</strong></li>
+        <li>Go to <strong>Google Account → Security</strong></li>
+        <li>Open <strong>App Passwords</strong></li>
+        <li>Select <strong>Mail</strong></li>
+        <li>Generate a <strong>16-character password</strong></li>
+        <li>Paste it above</li>
     </ol>
 
 </div>
 
 
-<div class="card" style="margin-top:25px;">
+<!-- ========================= -->
+<!-- PRIVACY -->
+<!-- ========================= -->
+
+<div class="card">
 
     <h3>🔒 Privacy Notice</h3>
 
     <p class="system-desc">
         Your credentials are stored only in a temporary session and automatically removed after logout or inactivity (15 minutes).
-        The system does not store your email data permanently.
+        <br><br>
+        <strong>No email data is stored permanently.</strong>
     </p>
 
 </div>
 
 
-<!-- ✅ Session Timeout Warning -->
-<div class="card" style="margin-top:20px;">
+<!-- ========================= -->
+<!-- SESSION -->
+<!-- ========================= -->
+
+<div class="card">
+
     <p class="system-desc" style="text-align:center;">
-        ⏳ For security, your session will expire after a short period of inactivity.
+        ⏳ Session expires after inactivity for security protection.
     </p>
+
 </div>
 
 {% endblock %}

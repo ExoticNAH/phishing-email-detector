@@ -13,10 +13,9 @@
         id="manual-content"
         rows="10"
         placeholder="Paste email content here..."
-        style="width:100%; padding:10px; resize:vertical;"
     ></textarea>
 
-    <div class="actions">
+    <div class="action-buttons">
         <button class="btn-primary" id="manual-scan-btn">
             🔍 Run Scan
         </button>
@@ -29,8 +28,13 @@
 
 <script>
 
-/* ---------- Highlight Suspicious Words ---------- */
+/* ---------- Extract Links ---------- */
+function extractLinks(text){
+    return text.match(/https?:\/\/[^\s]+/g) || [];
+}
 
+
+/* ---------- Highlight ---------- */
 function highlightContent(text){
 
     const words = [
@@ -46,11 +50,25 @@ function highlightContent(text){
             `<span class="phishing-word">$1</span>`);
     });
 
+    result = result.replace(/(https?:\/\/[^\s]+)/g,
+        `<span class="phishing-link">$1</span>`);
+
     return result;
 }
 
 
-/* ---------- Scan ---------- */
+/* ---------- Domain Check (fallback if AI not used) ---------- */
+function checkDomain(url){
+    try{
+        const domain = new URL(url).hostname;
+        return `✔ ${domain}`;
+    }catch{
+        return "Invalid URL";
+    }
+}
+
+
+/* ---------- SCAN ---------- */
 
 document.getElementById("manual-scan-btn").addEventListener("click", function () {
 
@@ -62,13 +80,11 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
 
     if(!content){
         box.innerHTML = "<p class='error'>⚠ Please enter email content.</p>";
-        box.classList.add("show");
         btn.disabled = false;
         return;
     }
 
     box.innerHTML = "<p class='loading'>⏳ Running AI scan...</p>";
-    box.classList.add("show");
 
     fetch("/scan", {
         method: "POST",
@@ -82,16 +98,33 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
 
         const confidence = Number(data.confidence).toFixed(2);
 
+        /* ---------- LABEL ---------- */
+        let labelClass = data.label === "PHISHING"
+            ? "label-danger"
+            : "label-safe";
+
+        /* ---------- RISKS ---------- */
         let risksHtml = data.risks.map(r => `<li>${r}</li>`).join("");
 
-        let labelColor = data.label === "PHISHING" ? "#ff4d4d" : "#00cc66";
+        /* ---------- LINKS ---------- */
+        let links = extractLinks(content);
+
+        let linksHtml = links.map(l =>
+            `<li>${l}<br><small>${checkDomain(l)}</small></li>`
+        ).join("");
+
+        /* ---------- FORMAT ANALYSIS ---------- */
+        let formattedAnalysis = data.analysis
+            .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
+            .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
+            .replace(/\n/g,"<br>");
 
         box.innerHTML = `
 
             <h3>🧠 Scan Result</h3>
 
-            <p style="color:${labelColor}; font-size:18px;">
-                <strong>${data.label}</strong>
+            <p class="result-label ${labelClass}">
+                ${data.label}
             </p>
 
             <p>Confidence: <strong>${confidence}%</strong></p>
@@ -109,23 +142,24 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
                 ${risksHtml || "<li>No significant risk detected</li>"}
             </ul>
 
+            <h4>🔗 Detected Links</h4>
+
+            <ul>
+                ${linksHtml || "<li>No links found</li>"}
+            </ul>
+
             <h4>📌 Highlighted Content</h4>
 
-            <div style="
-                white-space: pre-wrap;
-                background:#111;
-                padding:10px;
-                border-radius:8px;
-            ">
+            <div class="highlight-box">
                 ${highlightContent(content)}
             </div>
 
             <hr>
 
-            <h4>🤖 AI Analysis</h4>
+            <h4>📊 AI Analysis</h4>
 
-            <div class="ai-analysis">
-                ${data.analysis.replace(/\n/g,"<br>")}
+            <div class="analysis-box">
+                ${formattedAnalysis}
             </div>
 
         `;

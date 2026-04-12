@@ -16,9 +16,7 @@
 
     <!-- EMAIL BODY -->
     <div class="email-body">
-        <div id="email-content" class="email-text">
-            {{ email.body | safe }}
-        </div>
+        <div id="email-content" class="email-text"></div>
     </div>
 
     {% if email.attachments %}
@@ -51,7 +49,51 @@
 
 <script>
 
-/* ---------- Explain Risk ---------- */
+/* ============================= */
+/* HIGHLIGHT FUNCTION (FIXED) */
+/* ============================= */
+
+function highlightContent(text){
+
+    const words = [
+        "urgent","verify","password","login",
+        "click","account","bank","confirm",
+        "security","suspended","limited","action required"
+    ];
+
+    let result = text;
+
+    // Highlight keywords
+    words.forEach(w=>{
+        const regex = new RegExp(`\\b(${w})\\b`, "gi");
+        result = result.replace(regex,
+            `<span class="phishing-word">$1</span>`);
+    });
+
+    // Highlight links
+    result = result.replace(/(https?:\/\/[^\s]+)/g,
+        `<span class="phishing-link">$1</span>`);
+
+    // Preserve line breaks
+    result = result.replace(/\n/g,"<br>");
+
+    return result;
+}
+
+
+/* ============================= */
+/* LOAD EMAIL WITH HIGHLIGHT */
+/* ============================= */
+
+const rawEmail = `{{ email.body | safe }}`;
+document.getElementById("email-content").innerHTML =
+    highlightContent(rawEmail);
+
+
+/* ============================= */
+/* EXPLAIN RISK */
+/* ============================= */
+
 function explainRisk(risk){
 
     const id = "exp-" + risk.replace(/\s/g,'');
@@ -75,7 +117,9 @@ function explainRisk(risk){
 }
 
 
-/* ---------- SCAN ---------- */
+/* ============================= */
+/* SCAN */
+/* ============================= */
 
 document.getElementById("scan-btn").addEventListener("click", function () {
 
@@ -99,7 +143,6 @@ document.getElementById("scan-btn").addEventListener("click", function () {
 
         const confidence = Number(data.confidence).toFixed(2);
 
-        /* ---------- LABEL ---------- */
         let labelClass = data.label === "PHISHING"
             ? "label-danger"
             : "label-safe";
@@ -117,7 +160,7 @@ document.getElementById("scan-btn").addEventListener("click", function () {
             </li>`;
         }).join("");
 
-        /* ---------- DOMAIN (FROM BACKEND AI) ---------- */
+        /* ---------- DOMAIN AI ---------- */
         let domainHtml = data.domains.map(d => `
             <li>
                 <strong>${d.domain}</strong><br>

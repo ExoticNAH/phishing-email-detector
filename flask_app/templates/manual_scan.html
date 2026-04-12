@@ -11,7 +11,6 @@
 
     <textarea
         id="manual-content"
-        rows="10"
         placeholder="Paste email content here..."
     ></textarea>
 
@@ -28,30 +27,42 @@
 
 <script>
 
-/* ---------- Highlight Words ---------- */
+/* ============================= */
+/* HIGHLIGHT FUNCTION (IMPROVED) */
+/* ============================= */
+
 function highlightContent(text){
 
     const words = [
         "urgent","verify","password","login",
-        "click","account","bank","confirm","suspended"
+        "click","account","bank","confirm",
+        "security","suspended","limited",
+        "action required","update","immediately"
     ];
 
     let result = text;
 
+    // Highlight keywords
     words.forEach(w=>{
-        const r = new RegExp(`\\b(${w})\\b`,"gi");
-        result = result.replace(r,
-        `<span class="phishing-word">$1</span>`);
+        const regex = new RegExp(`\\b(${w})\\b`, "gi");
+        result = result.replace(regex,
+            `<span class="phishing-word">$1</span>`);
     });
 
+    // Highlight links
     result = result.replace(/(https?:\/\/[^\s]+)/g,
         `<span class="phishing-link">$1</span>`);
+
+    // Preserve formatting
+    result = result.replace(/\n/g,"<br>");
 
     return result;
 }
 
 
-/* ---------- SCAN ---------- */
+/* ============================= */
+/* SCAN */
+/* ============================= */
 
 document.getElementById("manual-scan-btn").addEventListener("click", function(){
 
@@ -81,25 +92,26 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
 
         const confidence = Number(data.confidence).toFixed(2);
 
-        /* ---------- LABEL ---------- */
         let labelClass = data.label === "PHISHING"
             ? "label-danger"
             : "label-safe";
 
         /* ---------- RISKS ---------- */
-        let risksHtml = data.risks.map(r =>
-            `<li>${r}</li>`
-        ).join("");
+        let risksHtml = data.risks && data.risks.length > 0
+            ? data.risks.map(r => `<li>${r}</li>`).join("")
+            : "<li>No risk detected</li>";
 
-        /* ---------- DOMAIN (FROM BACKEND AI) ---------- */
-        let domainHtml = data.domains.map(d => `
-            <li>
-                <strong>${d.domain}</strong><br>
-                <small>${d.analysis.replace(/\n/g,"<br>")}</small>
-            </li>
-        `).join("");
+        /* ---------- DOMAIN ---------- */
+        let domainHtml = data.domains && data.domains.length > 0
+            ? data.domains.map(d => `
+                <li>
+                    <strong>${d.domain}</strong><br>
+                    <small>${d.analysis.replace(/\n/g,"<br>")}</small>
+                </li>
+            `).join("")
+            : "<li>No domains found</li>";
 
-        /* ---------- FORMAT ANALYSIS ---------- */
+        /* ---------- ANALYSIS ---------- */
         let formattedAnalysis = data.analysis
             .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
             .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
@@ -125,13 +137,13 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
         <hr>
 
         <h4>⚠ Risk Factors</h4>
-        <ul>
-            ${risksHtml || "<li>No risk detected</li>"}
+        <ul class="risk-list">
+            ${risksHtml}
         </ul>
 
         <h4>🌐 Domain Analysis</h4>
-        <ul>
-            ${domainHtml || "<li>No domains found</li>"}
+        <ul class="domain-list">
+            ${domainHtml}
         </ul>
 
         <h4>📌 Highlighted Content</h4>

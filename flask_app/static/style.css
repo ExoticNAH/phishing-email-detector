@@ -103,24 +103,55 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== CENTER SECTIONS ===== */
+/* ===== INPUT FIELD (FIXED) ===== */
 /* ===================================================== */
 
-.center-section {
-  text-align: center;
-  margin-top: 20px;
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(10,20,50,0.6);
+  color: #ffffff;
+  font-size: 14px;
+  margin-top: 6px;
+  outline: none;
+  transition: 0.2s;
 }
 
-.center-list {
-  display: inline-block;
-  text-align: left;
-  margin-top: 10px;
+.input-field:focus {
+  border: 1px solid #4da6ff;
+  box-shadow: 0 0 10px rgba(77,166,255,0.3);
 }
 
-.center-text {
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: center;
+.input-hint {
+  display: block;
+  margin-top: 8px;
+  color: #9fb3ff;
+  font-size: 13px;
+}
+
+
+/* ===================================================== */
+/* ===== TEXTAREA ===== */
+/* ===================================================== */
+
+textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(10, 20, 50, 0.6);
+  color: #ffffff;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+}
+
+textarea:focus {
+  border: 1px solid #4da6ff;
+  box-shadow: 0 0 10px rgba(77,166,255,0.3);
 }
 
 
@@ -128,7 +159,8 @@ h1, h2, h3 {
 /* ===== BUTTONS ===== */
 /* ===================================================== */
 
-.action-buttons {
+.action-buttons,
+.actions {
   display: flex;
   justify-content: center;
   gap: 12px;
@@ -151,6 +183,7 @@ h1, h2, h3 {
 .btn:hover,
 .btn-primary:hover {
   transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(80,120,255,0.4);
 }
 
 .btn-danger {
@@ -215,6 +248,11 @@ h1, h2, h3 {
   flex-direction: column;
 }
 
+.email-right {
+  display: flex;
+  align-items: center;
+}
+
 .email-from {
   font-weight: 500;
 }
@@ -222,25 +260,6 @@ h1, h2, h3 {
 .email-subject {
   color: #c9d4ff;
   font-size: 14px;
-}
-
-.email-right {
-  display: flex;
-  align-items: center;
-}
-
-.email-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.email-indicator.safe {
-  background: #00c853;
-}
-
-.email-indicator.danger {
-  background: #ff4d4d;
 }
 
 
@@ -256,7 +275,7 @@ h1, h2, h3 {
 }
 
 .email-text {
-  white-space: pre-wrap;   /* 🔥 FIXED (IMPORTANT) */
+  white-space: pre-wrap;
 }
 
 
@@ -306,13 +325,19 @@ h1, h2, h3 {
 }
 
 .phishing-word {
-  color: #ff6b6b;
-  font-weight: bold;
+  background: rgba(255, 77, 77, 0.25);
+  color: #ff4d4d;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 600;
 }
 
 .phishing-link {
+  background: rgba(0, 200, 255, 0.2);
   color: #00ccff;
-  text-decoration: underline;
+  padding: 2px 6px;
+  border-radius: 6px;
+  word-break: break-all;
 }
 
 
@@ -321,7 +346,7 @@ h1, h2, h3 {
 /* ===================================================== */
 
 .analysis-box {
-  background: rgba(10,20,50,0.6); /* 🔥 FIXED (no more black) */
+  background: rgba(10,20,50,0.6);
   padding: 15px;
   border-radius: 10px;
   line-height: 1.6;
@@ -344,7 +369,7 @@ h1, h2, h3 {
 }
 
 .explain-btn:hover {
-  opacity: 0.8;
+  transform: scale(1.05);
 }
 
 .risk-explanation {
@@ -355,7 +380,7 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== WELCOME SCREEN ===== */
+/* ===== WELCOME ===== */
 /* ===================================================== */
 
 .welcome-screen {
@@ -364,12 +389,13 @@ h1, h2, h3 {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 16px;
   text-align: center;
 }
 
 .welcome-logo {
-  width: 180px;
-  margin-bottom: 20px;
+  width: 200px;
+  max-width: 60%;
 }
 
 .welcome-title {
