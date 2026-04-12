@@ -108,33 +108,30 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== DASHBOARD ===== */
+/* ===== DASHBOARD HEADER FIX ===== */
 /* ===================================================== */
 
-.dashboard-title {
+/* 🔥 THIS IS THE MAIN FIX */
+.title-row {
   display: flex;
-  flex-direction: column;   /* 🔥 FIX */
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  font-size: 28px;
-  text-align: center;
+  gap: 12px;
 }
 
-/* 🔥 LOGO FIX */
+/* LOGO */
 .title-logo {
-  width: 80px;
+  width: 50px;   /* 🔥 FIXED SIZE */
   height: auto;
-  object-fit: contain;
 }
 
-/* MOBILE */
-@media (max-width: 768px) {
-  .title-logo {
-    width: 60px;
-  }
+/* TITLE */
+.dashboard-title {
+  margin: 0;
+  font-size: 26px;
 }
 
+/* SUBTEXT */
 .subtitle {
   text-align: center;
   color: #c9d4ff;
@@ -260,15 +257,16 @@ input:focus, textarea:focus {
 
 
 /* ===================================================== */
-/* ===== EMAIL VIEW ===== */
+/* ===== EMAIL VIEW (FIXED COLOR) ===== */
 /* ===================================================== */
 
 .email-body {
-  background: #111;
+  background: rgba(10,20,50,0.85);   /* 🔥 FIXED FROM BLACK */
   padding: 15px;
   border-radius: 10px;
   max-height: 350px;
   overflow: auto;
+  border: 1px solid rgba(100,140,255,0.3);
 }
 
 
@@ -279,7 +277,7 @@ input:focus, textarea:focus {
 .scan-box {
   margin-top: 20px;
   padding: 20px;
-  background: #111;
+  background: rgba(10,20,50,0.85);   /* 🔥 MATCH THEME */
   border-left: 5px solid #6b8cff;
 }
 

@@ -5,14 +5,15 @@
 
   <div class="card dashboard">
 
-    <!-- 🔥 HEADER (FIXED) -->
+    <!-- 🔥 FIXED HEADER (INLINE LOGO + TEXT) -->
     <div class="dashboard-header">
 
-        <img src="{{ url_for('static', filename='logo.png') }}" class="title-logo">
-
-        <h1 class="dashboard-title">
-            Phishing Email Detection System
-        </h1>
+        <div class="title-row">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="title-logo">
+            <h1 class="dashboard-title">
+                Phishing Email Detection System
+            </h1>
+        </div>
 
     </div>
 
