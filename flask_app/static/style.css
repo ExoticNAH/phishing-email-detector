@@ -103,7 +103,33 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== INPUT FIELD (FIXED) ===== */
+/* ===== CENTER SECTIONS (FIXED) */
+/* ===================================================== */
+
+.centered-section {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.centered-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.centered-list li {
+  margin: 8px 0;
+}
+
+.centered-text {
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+
+/* ===================================================== */
+/* ===== INPUT FIELD ===== */
 /* ===================================================== */
 
 .input-field {
@@ -253,15 +279,6 @@ textarea:focus {
   align-items: center;
 }
 
-.email-from {
-  font-weight: 500;
-}
-
-.email-subject {
-  color: #c9d4ff;
-  font-size: 14px;
-}
-
 
 /* ===================================================== */
 /* ===== EMAIL VIEW ===== */
@@ -276,6 +293,16 @@ textarea:focus {
 
 .email-text {
   white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 🔥 FIX LONG LINKS */
+.email-text a,
+.highlight-box,
+.analysis-box,
+.scan-box {
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 
@@ -337,7 +364,6 @@ textarea:focus {
   color: #00ccff;
   padding: 2px 6px;
   border-radius: 6px;
-  word-break: break-all;
 }
 
 
