@@ -137,7 +137,7 @@ Analyze this domain: {domain}
 
 Return:
 Risk: Safe or Suspicious
-Reason: short explanation
+Reason: brief explanation with no special letter
 """
             }],
             temperature=0.2,
@@ -185,10 +185,10 @@ Detected risks: {risks}
 
 Return STRICT format:
 
-Explanation:
-<2-3 lines>
+Explain Briefly with no special case letter
 
 Advice:
+No special case letter
 - action
 - action
 - action
