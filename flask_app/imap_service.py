@@ -1,6 +1,8 @@
 import imaplib
 import email
 from email.header import decode_header
+from bs4 import BeautifulSoup
+import re
 
 
 # ---------- DANGEROUS ATTACHMENT EXTENSIONS ----------
@@ -10,7 +12,7 @@ DANGEROUS_EXTENSIONS = [
 ]
 
 
-# ---------- CONNECT TO GMAIL ----------
+# ---------- CONNECT ----------
 def _connect(email_account, app_password):
 
     imap = imaplib.IMAP4_SSL("imap.gmail.com")
@@ -20,7 +22,7 @@ def _connect(email_account, app_password):
     return imap
 
 
-# ---------- SAFE HEADER DECODER ----------
+# ---------- HEADER DECODER ----------
 def _decode_header_value(value):
 
     if not value:
@@ -32,6 +34,29 @@ def _decode_header_value(value):
         return decoded.decode(encoding or "utf-8", errors="ignore")
 
     return decoded
+
+
+# ---------- CLEAN HTML ----------
+def _clean_html(html_content):
+
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    # ❌ Remove dangerous/unnecessary tags
+    for tag in soup(["script", "style", "head", "meta", "link"]):
+        tag.decompose()
+
+    text = soup.get_text(separator="\n")
+
+    # Remove empty lines
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+    return "\n".join(lines)
+
+
+# ---------- EXTRACT LINKS ----------
+def _extract_links(text):
+
+    return re.findall(r"https?://[^\s]+", text)
 
 
 # ---------- FETCH EMAIL LIST ----------
@@ -86,6 +111,7 @@ def fetch_email_by_id(email_account, app_password, email_id):
     msg = email.message_from_bytes(msg_data[0][1])
 
     body = ""
+    html_body = ""
     attachments = []
     dangerous_found = False
 
@@ -96,7 +122,7 @@ def fetch_email_by_id(email_account, app_password, email_id):
             content_type = part.get_content_type()
             filename = part.get_filename()
 
-            # ---------- EMAIL BODY ----------
+            # ---------- TEXT ----------
             if content_type == "text/plain" and not filename:
 
                 payload = part.get_payload(decode=True)
@@ -104,22 +130,21 @@ def fetch_email_by_id(email_account, app_password, email_id):
                 if payload:
                     body = payload.decode(errors="ignore")
 
-            elif content_type == "text/html" and not body:
+            # ---------- HTML ----------
+            elif content_type == "text/html" and not filename:
 
                 payload = part.get_payload(decode=True)
 
                 if payload:
-                    body = payload.decode(errors="ignore")
+                    html_body = payload.decode(errors="ignore")
 
-            # ---------- ATTACHMENT DETECTION ----------
+            # ---------- ATTACHMENTS ----------
             if filename:
 
                 decoded_name = _decode_header_value(filename)
-
                 attachments.append(decoded_name)
 
                 for ext in DANGEROUS_EXTENSIONS:
-
                     if decoded_name.lower().endswith(ext):
                         dangerous_found = True
 
@@ -130,6 +155,13 @@ def fetch_email_by_id(email_account, app_password, email_id):
         if payload:
             body = payload.decode(errors="ignore")
 
+    # ---------- CLEAN BODY ----------
+    if html_body:
+        body = _clean_html(html_body)
+
+    # ---------- EXTRACT LINKS ----------
+    links = _extract_links(body)
+
     subject = _decode_header_value(msg.get("Subject"))
 
     imap.logout()
@@ -138,6 +170,7 @@ def fetch_email_by_id(email_account, app_password, email_id):
         "from": msg.get("From"),
         "subject": subject,
         "body": body,
+        "links": links,  # 🔥 NEW FEATURE
         "attachments": attachments,
         "dangerous_attachment": dangerous_found
     }

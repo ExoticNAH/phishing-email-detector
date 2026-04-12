@@ -1,59 +1,147 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>Manual Email Scan</h2>
+<div class="card">
 
-<textarea id="manual-content" rows="10" placeholder="Paste email content here..."></textarea>
-<br><br>
+    <h2>🧪 Quick Email Scan (Dashboard)</h2>
 
-<button class="btn-primary" id="manual-scan-btn">
-    Phishing Scan
-</button>
+    <p class="subtitle">
+        Paste email content to quickly analyze phishing risk using AI.
+    </p>
 
-<div id="manual-result" class="scan-box"></div>
+    <textarea
+        id="manual-content"
+        rows="10"
+        placeholder="Paste email content here..."
+        style="width:100%; padding:10px; resize:vertical;"
+    ></textarea>
+
+    <div class="actions">
+        <button class="btn-primary" id="manual-scan-btn">
+            🔍 Run Scan
+        </button>
+    </div>
+
+    <div id="manual-result" class="scan-box"></div>
+
+</div>
+
 
 <script>
+
+/* ---------- Highlight Suspicious Words ---------- */
+
+function highlightContent(text){
+
+    const words = [
+        "urgent","verify","password","login","click",
+        "account","bank","confirm","security","suspended"
+    ];
+
+    let result = text;
+
+    words.forEach(w=>{
+        const r = new RegExp(`\\b(${w})\\b`, "gi");
+        result = result.replace(r,
+            `<span class="phishing-word">$1</span>`);
+    });
+
+    return result;
+}
+
+
+/* ---------- Scan ---------- */
+
 document.getElementById("manual-scan-btn").addEventListener("click", function () {
-    const content = document.getElementById("manual-content").value;
+
+    const btn = this;
+    btn.disabled = true;
+
+    const content = document.getElementById("manual-content").value.trim();
     const box = document.getElementById("manual-result");
 
-    box.classList.remove("show");
-    box.innerHTML = "";
+    if(!content){
+        box.innerHTML = "<p class='error'>⚠ Please enter email content.</p>";
+        box.classList.add("show");
+        btn.disabled = false;
+        return;
+    }
+
+    box.innerHTML = "<p class='loading'>⏳ Running AI scan...</p>";
+    box.classList.add("show");
 
     fetch("/scan", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "content=" + encodeURIComponent(content)
     })
+
     .then(res => res.json())
+
     .then(data => {
 
-        let risksHtml = "";
-        data.risks.forEach(r => {
-            risksHtml += `<li>${r}</li>`;
-        });
+        const confidence = Number(data.confidence).toFixed(2);
 
-        let recHtml = "";
-        data.recommendation.forEach(r => {
-            recHtml += `<li>${r}</li>`;
-        });
+        let risksHtml = data.risks.map(r => `<li>${r}</li>`).join("");
+
+        let labelColor = data.label === "PHISHING" ? "#ff4d4d" : "#00cc66";
 
         box.innerHTML = `
-            <h3>Scan Result</h3>
-            <p><strong>${data.label}</strong></p>
-            <p>Confidence: ${data.confidence}%</p>
+
+            <h3>🧠 Scan Result</h3>
+
+            <p style="color:${labelColor}; font-size:18px;">
+                <strong>${data.label}</strong>
+            </p>
+
+            <p>Confidence: <strong>${confidence}%</strong></p>
+
+            <div class="confidence-bar">
+                <div class="confidence-fill"
+                style="width:${confidence}%"></div>
+            </div>
 
             <hr>
-            <h4>Detected Risk Factors</h4>
-            <ul>${risksHtml || "<li>No significant risk detected</li>"}</ul>
 
-            <h4>AI Recommended Action</h4>
-            <ul>${recHtml}</ul>
+            <h4>⚠ Detected Risk Factors</h4>
+
+            <ul>
+                ${risksHtml || "<li>No significant risk detected</li>"}
+            </ul>
+
+            <h4>📌 Highlighted Content</h4>
+
+            <div style="
+                white-space: pre-wrap;
+                background:#111;
+                padding:10px;
+                border-radius:8px;
+            ">
+                ${highlightContent(content)}
+            </div>
+
+            <hr>
+
+            <h4>🤖 AI Analysis</h4>
+
+            <div class="ai-analysis">
+                ${data.analysis.replace(/\n/g,"<br>")}
+            </div>
+
         `;
 
-        box.classList.add("show");
+    })
+
+    .catch(() => {
+        box.innerHTML = "<p class='error'>❌ Scan failed.</p>";
+    })
+
+    .finally(() => {
+        btn.disabled = false;
     });
+
 });
+
 </script>
 
 {% endblock %}

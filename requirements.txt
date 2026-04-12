@@ -7,3 +7,4 @@ bleach
 flask-limiter
 gunicorn
 Flask-WTF
+beautifulsoup4

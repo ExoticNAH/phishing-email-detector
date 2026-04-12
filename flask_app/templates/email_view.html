@@ -14,9 +14,14 @@
 
     <hr>
 
+    <!-- EMAIL BODY -->
     <div class="email-body">
-        <div id="email-content">
-            {{ email.body | safe }}
+        <div id="email-content" style="
+            white-space: pre-wrap;
+            line-height: 1.6;
+            word-wrap: break-word;
+        ">
+            {{ email.body }}
         </div>
     </div>
 
@@ -24,7 +29,6 @@
     <hr>
 
     <h4>📎 Attachments</h4>
-
     <ul>
         {% for file in email.attachments %}
         <li>{{ file }}</li>
@@ -33,10 +37,9 @@
 
     {% if email.dangerous_attachment %}
     <div class="xss-warning">
-        ⚠ Dangerous attachment detected. Do not download this file.
+        ⚠ Dangerous attachment detected. Do not download.
     </div>
     {% endif %}
-
     {% endif %}
 
     <div class="actions">
@@ -52,43 +55,60 @@
 
 <script>
 
-/* ---------- PHISHING WORD HIGHLIGHT ---------- */
-
-function highlightSuspiciousWords(text){
-
-    const suspiciousWords = [
-        "urgent",
-        "verify",
-        "password",
-        "login",
-        "click",
-        "account",
-        "suspended",
-        "security",
-        "bank",
-        "confirm",
-        "immediately"
-    ];
-
-    let highlighted = text;
-
-    suspiciousWords.forEach(word => {
-
-        const regex = new RegExp(`\\b(${word})\\b`, "gi");
-
-        highlighted = highlighted.replace(
-            regex,
-            `<span class="phishing-word">$1</span>`
-        );
-
-    });
-
-    return highlighted;
+/* ---------- Extract Links ---------- */
+function extractLinks(text){
+    return text.match(/https?:\/\/[^\s]+/g) || [];
 }
 
 
-/* ---------- RISK EXPLANATION ---------- */
+/* ---------- Highlight Words + Links ---------- */
+function highlightContent(text){
 
+    const words = [
+        "urgent","verify","password","login","click",
+        "account","suspended","security","bank",
+        "confirm","immediately"
+    ];
+
+    let result = text;
+
+    words.forEach(w=>{
+        const r = new RegExp(`\\b(${w})\\b`,"gi");
+        result = result.replace(r,
+        `<span class="phishing-word">$1</span>`);
+    });
+
+    // Highlight links
+    result = result.replace(/(https?:\/\/[^\s]+)/g,
+        `<span class="phishing-link">$1</span>`);
+
+    return result;
+}
+
+
+/* ---------- Domain Check ---------- */
+function checkDomain(url){
+
+    try{
+        const domain = new URL(url).hostname;
+
+        if(domain.includes("verify") || domain.includes("secure")){
+            return `⚠ Suspicious domain: ${domain}`;
+        }
+
+        if(domain.replace(/[a-z]/g,'').length > 3){
+            return `⚠ Possibly fake domain: ${domain}`;
+        }
+
+        return `✔ Domain looks normal: ${domain}`;
+
+    }catch{
+        return "Invalid URL";
+    }
+}
+
+
+/* ---------- Explain Risk ---------- */
 function explainRisk(risk){
 
     const id = "exp-" + risk.replace(/\s/g,'');
@@ -112,129 +132,91 @@ function explainRisk(risk){
 }
 
 
-/* ---------- SCAN BUTTON ---------- */
+/* ---------- SCAN ---------- */
 
 document.getElementById("scan-btn").addEventListener("click", function () {
 
+    const btn = this;
+    btn.disabled = true;
+
     const rawText = document.getElementById("email-content").innerText;
-
-    const content = rawText;
-
     const box = document.getElementById("scan-result");
 
-    box.classList.remove("show");
-
-    box.innerHTML = "<p class='loading'>⏳ Running AI phishing detection...</p>";
-
-    box.classList.add("show");
+    box.innerHTML = "⏳ Running AI scan...";
 
 
     fetch("/scan", {
-
         method: "POST",
-
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-
-        body: "content=" + encodeURIComponent(content)
-
+        body: "content=" + encodeURIComponent(rawText)
     })
 
-    .then(res => {
-
-        if(res.status === 429){
-
-            box.innerHTML =
-            "<p class='error'>⚠ Too many scan requests. Please wait 1 minute before scanning again.</p>";
-
-            throw new Error("Rate limit reached");
-
-        }
-
-        return res.json();
-
-    })
+    .then(res => res.json())
 
     .then(data => {
 
-        const confidencePercent = Number(data.confidence).toFixed(2);
+        const confidence = Number(data.confidence).toFixed(2);
 
-        let risksHtml = "";
+        let risksHtml = data.risks.map(r=>{
+            const id = r.replace(/\s/g,'');
+            return `
+            <li>${r}
+            <button onclick="explainRisk('${r}')">Explain</button>
+            <div id="exp-${id}"></div>
+            </li>`;
+        }).join("");
 
-        data.risks.forEach(r => {
+        // 🔥 Risk Score
+        let riskScore = data.label === "PHISHING"
+            ? confidence
+            : (100 - confidence);
 
-            const safeID = r.replace(/\s/g,'');
+        // 🔗 Links
+        let links = extractLinks(rawText);
 
-            risksHtml += `
-            <li>
-
-                ${r}
-
-                <button class="explain-btn"
-                onclick="explainRisk('${r}')">
-                Explain
-                </button>
-
-                <div class="risk-explanation"
-                id="exp-${safeID}"></div>
-
-            </li>
-            `;
-
-        });
-
-        let labelColor = data.label === "PHISHING" ? "#ff6b6b" : "#7effb4";
+        let linksHtml = links.map(l=>
+            `<li>${l}<br><small>${checkDomain(l)}</small></li>`
+        ).join("");
 
         box.innerHTML = `
 
-            <h3>🧠 AI Scan Result</h3>
+        <h3>🧠 AI Result</h3>
 
-            <p style="color:${labelColor}; font-size:18px; text-align:left;">
-                Classification: <strong>${data.label}</strong>
-            </p>
+        <p style="color:${data.label==="PHISHING"?"red":"green"}">
+            <strong>${data.label}</strong>
+        </p>
 
-            <p style="text-align:left;">
-                Confidence Level: <strong>${confidencePercent}%</strong>
-            </p>
+        <p>Confidence: ${confidence}%</p>
 
-            <div class="confidence-bar">
-                <div class="confidence-fill"
-                style="width:${confidencePercent}%"></div>
-            </div>
+        <div class="confidence-bar">
+            <div class="confidence-fill"
+            style="width:${riskScore}%"></div>
+        </div>
 
-            <hr>
+        <h4>⚠ Risks</h4>
+        <ul>${risksHtml || "<li>None</li>"}</ul>
 
-            <h4 style="text-align:left;">⚠ Detected Risk Factors</h4>
+        <h4>🔗 Links</h4>
+        <ul>${linksHtml || "<li>No links found</li>"}</ul>
 
-            <ul style="text-align:left;">
-                ${risksHtml || "<li>No significant risk detected</li>"}
-            </ul>
+        <h4>📌 Highlighted Email</h4>
+        <div style="white-space:pre-wrap; background:#111; padding:10px;">
+            ${highlightContent(rawText)}
+        </div>
 
-            <h4 style="text-align:left;">🤖 AI Security Analysis</h4>
-
-            <div class="ai-analysis">
-
-                <p style="line-height:1.6; text-align:left;">
-                    ${data.analysis.replace(/\n/g,"<br>")}
-                </p>
-
-            </div>
+        <h4>🤖 Analysis</h4>
+        <p>${data.analysis}</p>
 
         `;
 
-        document.getElementById("email-content").innerHTML =
-            highlightSuspiciousWords(rawText);
-
     })
 
-    .catch(err => {
+    .catch(()=>{
+        box.innerHTML = "❌ Scan failed";
+    })
 
-        if(err.message !== "Rate limit reached"){
-
-            box.innerHTML =
-            "<p class='error'>❌ Error occurred while scanning.</p>";
-
-        }
-
+    .finally(()=>{
+        btn.disabled = false;
     });
 
 });

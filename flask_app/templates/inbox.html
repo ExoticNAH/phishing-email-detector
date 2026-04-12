@@ -13,18 +13,46 @@
 
         {% if emails %}
             {% for email in emails %}
-                <div class="email-item clickable"
+
+                {% set subject = email.subject.lower() %}
+
+                {% set suspicious = (
+                    "urgent" in subject or
+                    "verify" in subject or
+                    "password" in subject or
+                    "login" in subject or
+                    "suspended" in subject or
+                    "bank" in subject or
+                    "security" in subject
+                ) %}
+
+                <div class="email-item clickable {% if suspicious %}suspicious-email{% endif %}"
                      onclick="window.location.href='/email/{{ email.id }}'">
 
-                    <div class="email-from">
-                        📧 {{ email.from }}
+                    <div class="email-left">
+
+                        <div class="email-from">
+                            📧 {{ email.from }}
+                        </div>
+
+                        <div class="email-subject">
+                            {{ email.subject }}
+                        </div>
+
                     </div>
 
-                    <div class="email-subject">
-                        {{ email.subject }}
+                    <div class="email-right">
+
+                        {% if suspicious %}
+                            <span class="badge-risk">⚠ Suspicious</span>
+                        {% else %}
+                            <span class="badge-safe">✔ Safe</span>
+                        {% endif %}
+
                     </div>
 
                 </div>
+
             {% endfor %}
         {% else %}
 
@@ -41,7 +69,10 @@
 
 <script>
 
+/* ---------- AUTO REFRESH ---------- */
+
 function refreshInbox(){
+
     fetch("/inbox")
     .then(res => res.text())
     .then(html => {
@@ -55,9 +86,10 @@ function refreshInbox(){
             newInbox.innerHTML;
 
     });
+
 }
 
-/* Auto refresh every 15 seconds */
+/* Refresh every 15 seconds */
 setInterval(refreshInbox, 15000);
 
 </script>
