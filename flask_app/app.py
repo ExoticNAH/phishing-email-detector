@@ -107,17 +107,17 @@ def extract_risks(text):
 def extract_domains(text):
 
     urls = re.findall(r'https?://[^\s]+', text)
-    domains = []
+    domains = set()
 
     for url in urls:
         try:
             domain = urlparse(url).hostname
             if domain:
-                domains.append(domain)
+                domains.add(domain)
         except:
             pass
 
-    return domains
+    return list(domains)
 
 
 # =====================================================
@@ -133,21 +133,15 @@ def ai_domain_analysis(domain):
                 "content": f"""
 You are a cybersecurity expert.
 
-Analyze this domain:
-{domain}
+Analyze this domain: {domain}
 
-Determine:
-- Is it legitimate or phishing?
-- Does it mimic a real brand?
-
-Respond EXACTLY like:
-
-Risk: <Safe or Suspicious>
-Reason: <short explanation>
+Return:
+Risk: Safe or Suspicious
+Reason: short explanation
 """
             }],
             temperature=0.2,
-            max_tokens=100
+            max_tokens=80
         )
 
         return response.choices[0].message.content.strip()
@@ -157,7 +151,7 @@ Reason: <short explanation>
 
 
 # =====================================================
-# ---------- DOMAIN ANALYSIS COMBINED ----------
+# ---------- DOMAIN ANALYSIS ----------
 # =====================================================
 def analyze_domains(text):
 
@@ -165,18 +159,16 @@ def analyze_domains(text):
     results = []
 
     for d in domains:
-        ai_result = ai_domain_analysis(d)
-
         results.append({
             "domain": d,
-            "analysis": ai_result
+            "analysis": ai_domain_analysis(d)
         })
 
     return results
 
 
 # =====================================================
-# ---------- AI ANALYSIS ----------
+# ---------- AI ANALYSIS + ADVICE ----------
 # =====================================================
 def generate_ai_analysis(email_content, label, risks):
 
@@ -191,29 +183,40 @@ You are a cybersecurity analyst.
 Email classification: {label}
 Detected risks: {risks}
 
-STRICT FORMAT:
+Return STRICT format:
 
 Explanation:
-<short explanation 2 lines>
+<2-3 lines>
 
 Advice:
 - action
 - action
 - action
 
-Do NOT repeat.
-Do NOT duplicate advice.
+Do NOT repeat points.
+Make advice practical.
 """
             }],
             temperature=0.2,
-            max_tokens=250
+            max_tokens=300
         )
 
-        return response.choices[0].message.content.strip()
+        result = response.choices[0].message.content.strip()
+
+        # 🔥 SPLIT ANALYSIS & ADVICE
+        explanation = result
+        advice = ""
+
+        if "Advice:" in result:
+            parts = result.split("Advice:")
+            explanation = parts[0].strip()
+            advice = parts[1].strip()
+
+        return explanation, advice
 
     except Exception as e:
         print("AI error:", e)
-        return "AI analysis unavailable."
+        return "AI analysis unavailable.", "No advice available."
 
 
 # =====================================================
@@ -289,17 +292,7 @@ def view_email(email_id):
 
         body = email_data.get("body", "")
 
-        # 🔥 highlight keywords
-        keywords = ["urgent","verify","password","login","click"]
-
-        for k in keywords:
-            body = re.sub(
-                f"({k})",
-                r'<span class="phishing-word">\1</span>',
-                body,
-                flags=re.IGNORECASE
-            )
-
+        # ❌ REMOVE BACKEND HIGHLIGHT (FIXED BUG)
         email_data["body"] = sanitize_email_html(body)
 
     except Exception as e:
@@ -338,20 +331,17 @@ def scan():
             "confidence":0,
             "risks":[],
             "analysis":"No content",
+            "advice":"",
             "domains":[]
         })
 
     try:
-        # ML
         label, confidence = predict_email(content)
 
-        # Risks
         risks = extract_risks(content)
 
-        # AI Explanation
-        analysis = generate_ai_analysis(content, label, risks)
+        analysis, advice = generate_ai_analysis(content, label, risks)
 
-        # 🔥 DOMAIN AI CHECK
         domains = analyze_domains(content)
 
         return jsonify({
@@ -359,6 +349,7 @@ def scan():
             "confidence": round(float(confidence), 2),
             "risks": risks,
             "analysis": analysis,
+            "advice": advice,
             "domains": domains
         })
 
@@ -370,6 +361,7 @@ def scan():
             "confidence":0,
             "risks":[],
             "analysis":"Scan failed",
+            "advice":"",
             "domains":[]
         })
 
@@ -381,7 +373,7 @@ def explain_risk():
 
     risk = request.form.get("risk","")
 
-    explanation = generate_ai_analysis(risk, "INFO", [])
+    explanation, _ = generate_ai_analysis(risk, "INFO", [])
 
     return jsonify({"explanation": explanation})
 

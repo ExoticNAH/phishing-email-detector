@@ -28,10 +28,22 @@
 <script>
 
 /* ============================= */
-/* HIGHLIGHT FUNCTION (IMPROVED) */
+/* SAFE ESCAPE (FIX) */
+/* ============================= */
+function escapeHTML(text){
+    const div = document.createElement("div");
+    div.innerText = text;
+    return div.innerHTML;
+}
+
+
+/* ============================= */
+/* HIGHLIGHT FUNCTION (FIXED) */
 /* ============================= */
 
 function highlightContent(text){
+
+    text = escapeHTML(text);
 
     const words = [
         "urgent","verify","password","login",
@@ -42,18 +54,16 @@ function highlightContent(text){
 
     let result = text;
 
-    // Highlight keywords
     words.forEach(w=>{
-        const regex = new RegExp(`\\b(${w})\\b`, "gi");
+        const regex = new RegExp(`(${w})`, "gi");
         result = result.replace(regex,
             `<span class="phishing-word">$1</span>`);
     });
 
-    // Highlight links
+    // FIX overflow
     result = result.replace(/(https?:\/\/[^\s]+)/g,
-        `<span class="phishing-link">$1</span>`);
+        `<span class="phishing-link" style="word-break:break-all;">$1</span>`);
 
-    // Preserve formatting
     result = result.replace(/\n/g,"<br>");
 
     return result;
@@ -90,7 +100,7 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
 
     .then(data=>{
 
-        const confidence = Number(data.confidence).toFixed(2);
+        const confidence = Number(data.confidence || 0).toFixed(2);
 
         let labelClass = data.label === "PHISHING"
             ? "label-danger"
@@ -113,9 +123,13 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
 
         /* ---------- ANALYSIS ---------- */
         let formattedAnalysis = data.analysis
-            .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
-            .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
-            .replace(/\n/g,"<br>");
+            ? data.analysis.replace(/\n/g,"<br>")
+            : "No analysis available";
+
+        /* ---------- AI ADVICE (NEW) ---------- */
+        let formattedAdvice = data.advice
+            ? data.advice.replace(/\n/g,"<br>")
+            : "No advice available";
 
         box.innerHTML = `
 
@@ -151,9 +165,15 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
             ${highlightContent(content)}
         </div>
 
+        <!-- 🔥 CLEAN SEPARATION -->
         <h4>📊 AI Analysis</h4>
         <div class="analysis-box">
             ${formattedAnalysis}
+        </div>
+
+        <h4>💡 AI Advice</h4>
+        <div class="analysis-box">
+            ${formattedAdvice}
         </div>
 
         `;

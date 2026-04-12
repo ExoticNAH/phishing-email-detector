@@ -16,19 +16,7 @@
         {% if emails %}
             {% for email in emails %}
 
-                {% set subject = email.subject.lower() %}
-
-                {% set suspicious = (
-                    "urgent" in subject or
-                    "verify" in subject or
-                    "password" in subject or
-                    "login" in subject or
-                    "suspended" in subject or
-                    "bank" in subject or
-                    "security" in subject
-                ) %}
-
-                <div class="email-item clickable {% if suspicious %}email-danger{% endif %}"
+                <div class="email-item clickable"
                      onclick="window.location.href='/email/{{ email.id }}'">
 
                     <!-- LEFT -->
@@ -41,17 +29,6 @@
                         <div class="email-subject">
                             {{ email.subject }}
                         </div>
-
-                    </div>
-
-                    <!-- RIGHT (clean minimalist indicator) -->
-                    <div class="email-right">
-
-                        {% if suspicious %}
-                            <span class="email-indicator danger"></span>
-                        {% else %}
-                            <span class="email-indicator safe"></span>
-                        {% endif %}
 
                     </div>
 

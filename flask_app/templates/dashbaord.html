@@ -28,47 +28,50 @@
 
 <script>
 
-/* ---------- Extract Links ---------- */
-function extractLinks(text){
-    return text.match(/https?:\/\/[^\s]+/g) || [];
+/* ============================= */
+/* SAFE ESCAPE (FIX HIGHLIGHT BUG) */
+/* ============================= */
+function escapeHTML(text){
+    const div = document.createElement("div");
+    div.innerText = text;
+    return div.innerHTML;
 }
 
 
-/* ---------- Highlight ---------- */
+/* ============================= */
+/* HIGHLIGHT (FIXED) */
+/* ============================= */
 function highlightContent(text){
+
+    text = escapeHTML(text);
 
     const words = [
         "urgent","verify","password","login","click",
-        "account","bank","confirm","security","suspended"
+        "account","bank","confirm","security","suspended",
+        "limited","update","immediately","action required"
     ];
 
     let result = text;
 
     words.forEach(w=>{
-        const r = new RegExp(`\\b(${w})\\b`, "gi");
+        const r = new RegExp(`(${w})`, "gi");
         result = result.replace(r,
             `<span class="phishing-word">$1</span>`);
     });
 
+    // FIX overflow for long links
     result = result.replace(/(https?:\/\/[^\s]+)/g,
-        `<span class="phishing-link">$1</span>`);
+        `<span class="phishing-link" style="word-break:break-all;">$1</span>`);
+
+    result = result.replace(/\n/g,"<br>");
 
     return result;
 }
 
 
-/* ---------- Domain Check (fallback if AI not used) ---------- */
-function checkDomain(url){
-    try{
-        const domain = new URL(url).hostname;
-        return `✔ ${domain}`;
-    }catch{
-        return "Invalid URL";
-    }
-}
-
-
-/* ---------- SCAN ---------- */
+/* ============================= */
+/* SCAN */
+/* ============================= */
 
 document.getElementById("manual-scan-btn").addEventListener("click", function () {
 
@@ -96,7 +99,7 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
 
     .then(data => {
 
-        const confidence = Number(data.confidence).toFixed(2);
+        const confidence = Number(data.confidence || 0).toFixed(2);
 
         /* ---------- LABEL ---------- */
         let labelClass = data.label === "PHISHING"
@@ -104,20 +107,29 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
             : "label-safe";
 
         /* ---------- RISKS ---------- */
-        let risksHtml = data.risks.map(r => `<li>${r}</li>`).join("");
+        let risksHtml = data.risks && data.risks.length > 0
+            ? data.risks.map(r => `<li>${r}</li>`).join("")
+            : "<li>No significant risk detected</li>";
 
-        /* ---------- LINKS ---------- */
-        let links = extractLinks(content);
+        /* ---------- DOMAIN (AI BACKEND) ---------- */
+        let domainHtml = data.domains && data.domains.length > 0
+            ? data.domains.map(d => `
+                <li>
+                    <strong>${d.domain}</strong><br>
+                    <small>${d.analysis.replace(/\n/g,"<br>")}</small>
+                </li>
+            `).join("")
+            : "<li>No domains found</li>";
 
-        let linksHtml = links.map(l =>
-            `<li>${l}<br><small>${checkDomain(l)}</small></li>`
-        ).join("");
-
-        /* ---------- FORMAT ANALYSIS ---------- */
+        /* ---------- ANALYSIS ---------- */
         let formattedAnalysis = data.analysis
-            .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
-            .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
-            .replace(/\n/g,"<br>");
+            ? data.analysis.replace(/\n/g,"<br>")
+            : "No analysis available";
+
+        /* ---------- AI ADVICE (NEW) ---------- */
+        let formattedAdvice = data.advice
+            ? data.advice.replace(/\n/g,"<br>")
+            : "No advice available";
 
         box.innerHTML = `
 
@@ -127,7 +139,9 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
                 ${data.label}
             </p>
 
-            <p>Confidence: <strong>${confidence}%</strong></p>
+            <p class="confidence-text">
+                Confidence: <strong>${confidence}%</strong>
+            </p>
 
             <div class="confidence-bar">
                 <div class="confidence-fill"
@@ -137,19 +151,16 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
             <hr>
 
             <h4>⚠ Detected Risk Factors</h4>
-
-            <ul>
-                ${risksHtml || "<li>No significant risk detected</li>"}
+            <ul class="risk-list">
+                ${risksHtml}
             </ul>
 
-            <h4>🔗 Detected Links</h4>
-
-            <ul>
-                ${linksHtml || "<li>No links found</li>"}
+            <h4>🌐 Domain Analysis</h4>
+            <ul class="domain-list">
+                ${domainHtml}
             </ul>
 
             <h4>📌 Highlighted Content</h4>
-
             <div class="highlight-box">
                 ${highlightContent(content)}
             </div>
@@ -157,9 +168,13 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
             <hr>
 
             <h4>📊 AI Analysis</h4>
-
             <div class="analysis-box">
                 ${formattedAnalysis}
+            </div>
+
+            <h4>💡 AI Advice</h4>
+            <div class="analysis-box">
+                ${formattedAdvice}
             </div>
 
         `;
