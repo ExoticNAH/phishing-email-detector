@@ -50,7 +50,7 @@
 <script>
 
 /* ============================= */
-/* SAFE ESCAPE (IMPORTANT FIX) */
+/* SAFE ESCAPE */
 /* ============================= */
 function escapeHTML(text){
     const div = document.createElement("div");
@@ -60,12 +60,11 @@ function escapeHTML(text){
 
 
 /* ============================= */
-/* HIGHLIGHT FUNCTION (FIXED) */
+/* HIGHLIGHT */
 /* ============================= */
-
 function highlightContent(text){
 
-    text = escapeHTML(text); // prevent HTML breaking
+    text = escapeHTML(text);
 
     const words = [
         "urgent","verify","password","login",
@@ -81,11 +80,9 @@ function highlightContent(text){
             `<span class="phishing-word">$1</span>`);
     });
 
-    // Highlight links + FIX overflow
     result = result.replace(/(https?:\/\/[^\s]+)/g,
         `<span class="phishing-link" style="word-break:break-all;">$1</span>`);
 
-    // Preserve line breaks
     result = result.replace(/\n/g,"<br>");
 
     return result;
@@ -93,9 +90,8 @@ function highlightContent(text){
 
 
 /* ============================= */
-/* LOAD EMAIL WITH HIGHLIGHT */
+/* LOAD EMAIL */
 /* ============================= */
-
 const rawEmail = `{{ email.body | e }}`;
 document.getElementById("email-content").innerHTML =
     highlightContent(rawEmail);
@@ -104,14 +100,12 @@ document.getElementById("email-content").innerHTML =
 /* ============================= */
 /* EXPLAIN RISK */
 /* ============================= */
-
 function explainRisk(risk){
 
     const id = "exp-" + risk.replace(/\s/g,'');
-
     const container = document.getElementById(id);
 
-    container.innerHTML = "⏳ Loading...";
+    container.innerHTML = "<div class='loading'>⏳ Analyzing...</div>";
 
     fetch("/explain-risk",{
         method:"POST",
@@ -122,7 +116,17 @@ function explainRisk(risk){
     })
     .then(res=>res.json())
     .then(data=>{
-        container.innerHTML = data.explanation.replace(/\n/g,"<br>");
+
+        let formatted = data.explanation
+            .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
+            .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
+            .replace(/\n/g,"<br>");
+
+        container.innerHTML = `
+            <div class="analysis-box" style="margin-top:8px;">
+                ${formatted}
+            </div>
+        `;
     });
 
 }
@@ -131,7 +135,6 @@ function explainRisk(risk){
 /* ============================= */
 /* SCAN */
 /* ============================= */
-
 document.getElementById("scan-btn").addEventListener("click", function () {
 
     const btn = this;
@@ -152,37 +155,42 @@ document.getElementById("scan-btn").addEventListener("click", function () {
 
     .then(data => {
 
-        const confidence = Number(data.confidence).toFixed(2);
+        const confidence = Number(data.confidence || 0).toFixed(2);
 
         let labelClass = data.label === "PHISHING"
             ? "label-danger"
             : "label-safe";
 
         /* ---------- RISKS ---------- */
-        let risksHtml = data.risks.map(r=>{
-            const id = r.replace(/\s/g,'');
+        let risksHtml = data.risks && data.risks.length > 0
+            ? data.risks.map(r=>{
+                const id = r.replace(/\s/g,'');
+                return `
+                <li class="risk-item">
+                    ${r}
+                    <button class="explain-btn"
+                    onclick="explainRisk('${r}')">Explain</button>
+                    <div id="exp-${id}" class="risk-explanation"></div>
+                </li>`;
+            }).join("")
+            : "<li>No risk detected</li>";
 
-            return `
-            <li class="risk-item">
-                ${r}
-                <button class="explain-btn"
-                onclick="explainRisk('${r}')">Explain</button>
-                <div id="exp-${id}" class="risk-explanation"></div>
-            </li>`;
-        }).join("");
-
-        /* ---------- DOMAIN AI ---------- */
-        let domainHtml = data.domains.map(d => `
-            <li>
-                <strong>${d.domain}</strong><br>
-                <small>${d.analysis.replace(/\n/g,"<br>")}</small>
-            </li>
-        `).join("");
+        /* ---------- DOMAINS ---------- */
+        let domainHtml = data.domains && data.domains.length > 0
+            ? data.domains.map(d => `
+                <li>
+                    <strong>${d.domain}</strong><br>
+                    <small>${d.analysis.replace(/\n/g,"<br>")}</small>
+                </li>
+            `).join("")
+            : "<li>No domains found</li>";
 
         /* ---------- ANALYSIS ---------- */
-        let formattedAnalysis = data.analysis.replace(/\n/g,"<br>");
+        let formattedAnalysis = data.analysis
+            ? data.analysis.replace(/\n/g,"<br>")
+            : "No analysis available";
 
-        /* ---------- AI ADVICE (NEW) ---------- */
+        /* ---------- ADVICE ---------- */
         let formattedAdvice = data.advice
             ? data.advice.replace(/\n/g,"<br>")
             : "No advice available";
@@ -208,15 +216,14 @@ document.getElementById("scan-btn").addEventListener("click", function () {
 
         <h4>⚠ Risk Factors</h4>
         <ul class="risk-list">
-            ${risksHtml || "<li>No risk detected</li>"}
+            ${risksHtml}
         </ul>
 
         <h4>🌐 Domain Analysis</h4>
         <ul>
-            ${domainHtml || "<li>No domains found</li>"}
+            ${domainHtml}
         </ul>
 
-        <!-- 🔥 CLEAN SEPARATION -->
         <h4>📊 AI Analysis</h4>
         <div class="analysis-box">
             ${formattedAnalysis}

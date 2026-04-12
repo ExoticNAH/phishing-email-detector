@@ -64,10 +64,15 @@ h1, h2, h3 {
   max-width: 1000px;
   margin: 40px auto;
   padding: 30px;
-  background: rgba(15, 25, 60, 0.78);
-  backdrop-filter: blur(10px);
+  background: rgba(15, 25, 60, 0.75);
+  backdrop-filter: blur(12px);
   border-radius: 16px;
-  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+
+  /* 🔥 NEW */
+  border: 1px solid rgba(120,160,255,0.25);
+  box-shadow:
+    0 0 25px rgba(80,120,255,0.15),
+    0 25px 50px rgba(0,0,0,0.6);
 }
 
 
@@ -103,63 +108,7 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== CENTER SECTIONS (FIXED) */
-/* ===================================================== */
-
-.centered-section {
-  text-align: center;
-  margin-top: 30px;
-}
-
-.centered-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 15px;
-}
-
-.centered-list li {
-  margin: 8px 0;
-}
-
-.centered-text {
-  max-width: 700px;
-  margin: 0 auto;
-  line-height: 1.6;
-}
-
-
-/* ===================================================== */
 /* ===== INPUT FIELD ===== */
-/* ===================================================== */
-
-.input-field {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(10,20,50,0.6);
-  color: #ffffff;
-  font-size: 14px;
-  margin-top: 6px;
-  outline: none;
-  transition: 0.2s;
-}
-
-.input-field:focus {
-  border: 1px solid #4da6ff;
-  box-shadow: 0 0 10px rgba(77,166,255,0.3);
-}
-
-.input-hint {
-  display: block;
-  margin-top: 8px;
-  color: #9fb3ff;
-  font-size: 13px;
-}
-
-
-/* ===================================================== */
-/* ===== TEXTAREA ===== */
 /* ===================================================== */
 
 textarea {
@@ -200,7 +149,6 @@ textarea:focus {
   color: white;
   padding: 10px 16px;
   border-radius: 10px;
-  text-decoration: none;
   border: none;
   cursor: pointer;
   transition: 0.2s;
@@ -218,65 +166,23 @@ textarea:focus {
 
 
 /* ===================================================== */
-/* ===== STATUS ===== */
-/* ===================================================== */
-
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
-  gap: 20px;
-}
-
-.status-card {
-  background: rgba(10,20,50,0.85);
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.status-ok { color: #7effb4; }
-.status-danger { color: #ff6b6b; }
-
-
-/* ===================================================== */
 /* ===== INBOX ===== */
 /* ===================================================== */
 
-.inbox-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .email-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(10,20,50,0.85);
+  background: rgba(10,20,50,0.75);
   padding: 15px;
   margin-bottom: 10px;
-  border-left: 4px solid #6b8cff;
   border-radius: 10px;
-  cursor: pointer;
+
+  /* 🔥 subtle glow */
+  border: 1px solid rgba(120,160,255,0.15);
   transition: 0.2s;
 }
 
 .email-item:hover {
   transform: translateX(4px);
-}
-
-.email-danger {
-  border-left: 4px solid #ff4d4d;
-}
-
-.email-left {
-  display: flex;
-  flex-direction: column;
-}
-
-.email-right {
-  display: flex;
-  align-items: center;
+  background: rgba(20,30,70,0.9);
 }
 
 
@@ -285,24 +191,14 @@ textarea:focus {
 /* ===================================================== */
 
 .email-body {
-  background: rgba(10,20,50,0.85);
+  background: rgba(10,20,50,0.75);
   padding: 15px;
   border-radius: 10px;
-  line-height: 1.6;
 }
 
 .email-text {
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-/* 🔥 FIX LONG LINKS */
-.email-text a,
-.highlight-box,
-.analysis-box,
-.scan-box {
-  word-break: break-all;
-  overflow-wrap: anywhere;
 }
 
 
@@ -313,15 +209,18 @@ textarea:focus {
 .scan-box {
   margin-top: 20px;
   padding: 20px;
-  background: rgba(10,20,50,0.85);
-  border-left: 4px solid #6b8cff;
-  border-radius: 10px;
+
+  /* 🔥 IMPROVED */
+  background: rgba(10,20,50,0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(120,160,255,0.3);
+  box-shadow: 0 0 20px rgba(80,120,255,0.15);
 }
 
-.result-label {
-  font-size: 18px;
-  font-weight: bold;
-}
+
+/* ===================================================== */
+/* ===== RESULT LABEL ===== */
+/* ===================================================== */
 
 .label-danger { color: #ff4d4d; }
 .label-safe { color: #00ff99; }
@@ -331,7 +230,6 @@ textarea:focus {
   background: #1a1f3d;
   border-radius: 5px;
   overflow: hidden;
-  margin-top: 8px;
 }
 
 .confidence-fill {
@@ -345,10 +243,10 @@ textarea:focus {
 /* ===================================================== */
 
 .highlight-box {
-  background: rgba(10,20,50,0.85);
+  background: rgba(10,20,50,0.8);
   padding: 12px;
   border-radius: 10px;
-  line-height: 1.6;
+  border: 1px solid rgba(120,160,255,0.2);
 }
 
 .phishing-word {
@@ -368,14 +266,20 @@ textarea:focus {
 
 
 /* ===================================================== */
-/* ===== ANALYSIS ===== */
+/* ===== ANALYSIS BOX (🔥 MAIN FIX) */
 /* ===================================================== */
 
 .analysis-box {
-  background: rgba(10,20,50,0.6);
+  background: rgba(15,30,80,0.85);
   padding: 15px;
-  border-radius: 10px;
+  border-radius: 12px;
+
+  /* 🔥 MAKE IT POP */
+  border: 1px solid rgba(100,140,255,0.4);
+  box-shadow: 0 0 18px rgba(80,120,255,0.25);
+
   line-height: 1.6;
+  margin-top: 10px;
 }
 
 
@@ -420,8 +324,7 @@ textarea:focus {
 }
 
 .welcome-logo {
-  width: 200px;
-  max-width: 60%;
+  width: 180px;
 }
 
 .welcome-title {
@@ -435,11 +338,3 @@ textarea:focus {
 .loading-dots {
   color: #9fb3ff;
 }
-
-
-/* ===================================================== */
-/* ===== UTIL ===== */
-/* ===================================================== */
-
-.loading { color:#9fb3ff; }
-.error { color:#ff6b6b; }

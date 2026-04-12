@@ -102,7 +102,7 @@ def extract_risks(text):
 
 
 # =====================================================
-# ---------- DOMAIN EXTRACTION ----------
+# ---------- DOMAIN ----------
 # =====================================================
 def extract_domains(text):
 
@@ -120,9 +120,6 @@ def extract_domains(text):
     return list(domains)
 
 
-# =====================================================
-# ---------- OPENAI DOMAIN ANALYSIS ----------
-# =====================================================
 def ai_domain_analysis(domain):
 
     try:
@@ -137,7 +134,7 @@ Analyze this domain: {domain}
 
 Return:
 Risk: Safe or Suspicious
-Reason: brief explanation with no special letter
+Reason: short clear explanation
 """
             }],
             temperature=0.2,
@@ -150,9 +147,6 @@ Reason: brief explanation with no special letter
         return f"AI error: {str(e)}"
 
 
-# =====================================================
-# ---------- DOMAIN ANALYSIS ----------
-# =====================================================
 def analyze_domains(text):
 
     domains = extract_domains(text)
@@ -168,7 +162,7 @@ def analyze_domains(text):
 
 
 # =====================================================
-# ---------- AI ANALYSIS + ADVICE ----------
+# ---------- AI ANALYSIS (FIXED) ----------
 # =====================================================
 def generate_ai_analysis(email_content, label, risks):
 
@@ -180,21 +174,23 @@ def generate_ai_analysis(email_content, label, risks):
                 "content": f"""
 You are a cybersecurity analyst.
 
-Email classification: {label}
+Email content:
+{email_content}
+
+Classification: {label}
 Detected risks: {risks}
 
-Return STRICT format:
+Return STRICTLY:
 
-Explain Briefly with no special case letter
+Explanation:
+Explain why this email is {label.lower()}.
 
 Advice:
-No special case letter
-- action
-- action
-- action
+- action 1
+- action 2
+- action 3
 
-Do NOT repeat points.
-Make advice practical.
+Do NOT contradict the classification.
 """
             }],
             temperature=0.2,
@@ -203,20 +199,54 @@ Make advice practical.
 
         result = response.choices[0].message.content.strip()
 
-        # 🔥 SPLIT ANALYSIS & ADVICE
-        explanation = result
+        explanation = ""
         advice = ""
 
         if "Advice:" in result:
             parts = result.split("Advice:")
-            explanation = parts[0].strip()
+            explanation = parts[0].replace("Explanation:", "").strip()
             advice = parts[1].strip()
+        else:
+            explanation = result
 
         return explanation, advice
 
     except Exception as e:
         print("AI error:", e)
         return "AI analysis unavailable.", "No advice available."
+
+
+# =====================================================
+# ---------- EXPLAIN RISK (FIXED) ----------
+# =====================================================
+def explain_specific_risk(risk):
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": f"""
+You are a cybersecurity expert.
+
+Explain this phishing indicator clearly:
+{risk}
+
+Return:
+Explanation: short explanation
+Advice:
+- action
+- action
+"""
+            }],
+            temperature=0.2,
+            max_tokens=150
+        )
+
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 
 # =====================================================
@@ -234,33 +264,27 @@ def home():
     return render_template("home.html")
 
 
-# ---------- SETUP ----------
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
 
     if request.method == "POST":
 
-        email = request.form.get("email")
-        password = request.form.get("password")
-
         session.clear()
 
-        session["email"] = email
-        session["password"] = password
+        session["email"] = request.form.get("email")
+        session["password"] = request.form.get("password")
 
         return redirect("/home")
 
     return render_template("setup.html")
 
 
-# ---------- LOGOUT ----------
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
 
 
-# ---------- INBOX ----------
 @app.route("/inbox")
 def inbox():
 
@@ -276,7 +300,6 @@ def inbox():
     return render_template("inbox.html", emails=emails)
 
 
-# ---------- VIEW EMAIL ----------
 @app.route("/email/<email_id>")
 def view_email(email_id):
 
@@ -290,10 +313,7 @@ def view_email(email_id):
             email_id
         )
 
-        body = email_data.get("body", "")
-
-        # ❌ REMOVE BACKEND HIGHLIGHT (FIXED BUG)
-        email_data["body"] = sanitize_email_html(body)
+        email_data["body"] = sanitize_email_html(email_data.get("body", ""))
 
     except Exception as e:
         print("Fetch error:", e)
@@ -309,7 +329,6 @@ def view_email(email_id):
     return render_template("email_view.html", email=email_data)
 
 
-# ---------- MANUAL ----------
 @app.route("/manual")
 def manual():
     return render_template("manual_scan.html")
@@ -366,14 +385,16 @@ def scan():
         })
 
 
+# =====================================================
 # ---------- EXPLAIN ----------
+# =====================================================
 @csrf.exempt
 @app.route("/explain-risk", methods=["POST"])
 def explain_risk():
 
     risk = request.form.get("risk","")
 
-    explanation, _ = generate_ai_analysis(risk, "INFO", [])
+    explanation = explain_specific_risk(risk)
 
     return jsonify({"explanation": explanation})
 

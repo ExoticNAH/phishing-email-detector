@@ -29,7 +29,7 @@
 <script>
 
 /* ============================= */
-/* SAFE ESCAPE (FIX HIGHLIGHT BUG) */
+/* SAFE ESCAPE */
 /* ============================= */
 function escapeHTML(text){
     const div = document.createElement("div");
@@ -39,7 +39,7 @@ function escapeHTML(text){
 
 
 /* ============================= */
-/* HIGHLIGHT (FIXED) */
+/* HIGHLIGHT */
 /* ============================= */
 function highlightContent(text){
 
@@ -59,13 +59,47 @@ function highlightContent(text){
             `<span class="phishing-word">$1</span>`);
     });
 
-    // FIX overflow for long links
     result = result.replace(/(https?:\/\/[^\s]+)/g,
         `<span class="phishing-link" style="word-break:break-all;">$1</span>`);
 
     result = result.replace(/\n/g,"<br>");
 
     return result;
+}
+
+
+/* ============================= */
+/* EXPLAIN RISK (NEW) */
+/* ============================= */
+function explainRisk(risk){
+
+    const id = "exp-" + risk.replace(/\s/g,'');
+    const container = document.getElementById(id);
+
+    container.innerHTML = "<div class='loading'>⏳ Analyzing...</div>";
+
+    fetch("/explain-risk",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:"risk="+encodeURIComponent(risk)
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        let formatted = data.explanation
+            .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
+            .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
+            .replace(/\n/g,"<br>");
+
+        container.innerHTML = `
+            <div class="analysis-box" style="margin-top:8px;">
+                ${formatted}
+            </div>
+        `;
+    });
+
 }
 
 
@@ -101,17 +135,25 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
 
         const confidence = Number(data.confidence || 0).toFixed(2);
 
-        /* ---------- LABEL ---------- */
         let labelClass = data.label === "PHISHING"
             ? "label-danger"
             : "label-safe";
 
         /* ---------- RISKS ---------- */
         let risksHtml = data.risks && data.risks.length > 0
-            ? data.risks.map(r => `<li>${r}</li>`).join("")
+            ? data.risks.map(r=>{
+                const id = r.replace(/\s/g,'');
+                return `
+                <li class="risk-item">
+                    ${r}
+                    <button class="explain-btn"
+                    onclick="explainRisk('${r}')">Explain</button>
+                    <div id="exp-${id}" class="risk-explanation"></div>
+                </li>`;
+            }).join("")
             : "<li>No significant risk detected</li>";
 
-        /* ---------- DOMAIN (AI BACKEND) ---------- */
+        /* ---------- DOMAIN ---------- */
         let domainHtml = data.domains && data.domains.length > 0
             ? data.domains.map(d => `
                 <li>
@@ -126,7 +168,7 @@ document.getElementById("manual-scan-btn").addEventListener("click", function ()
             ? data.analysis.replace(/\n/g,"<br>")
             : "No analysis available";
 
-        /* ---------- AI ADVICE (NEW) ---------- */
+        /* ---------- ADVICE ---------- */
         let formattedAdvice = data.advice
             ? data.advice.replace(/\n/g,"<br>")
             : "No advice available";
