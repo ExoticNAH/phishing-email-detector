@@ -5,9 +5,22 @@
 
     <!-- HEADER -->
     <div class="inbox-header">
-        <a href="/home" class="btn">← Dashboard</a>
-        <h2>📥 Email Inbox</h2>
-        <span class="refresh-indicator">Auto refresh: 15s</span>
+
+        <!-- LEFT -->
+        <div class="header-left">
+            <a href="/home" class="btn">← Dashboard</a>
+        </div>
+
+        <!-- CENTER -->
+        <div class="header-center">
+            <h2>📥 Email Inbox</h2>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="header-right">
+            <span class="refresh-indicator">Auto refresh: 15s</span>
+        </div>
+
     </div>
 
     <!-- EMAIL LIST -->
@@ -19,7 +32,6 @@
                 <div class="email-item clickable"
                      onclick="window.location.href='/email/{{ email.id }}'">
 
-                    <!-- LEFT -->
                     <div class="email-left">
 
                         <div class="email-from">
