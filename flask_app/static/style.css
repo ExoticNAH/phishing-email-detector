@@ -68,7 +68,6 @@ h1, h2, h3 {
   backdrop-filter: blur(12px);
   border-radius: 16px;
 
-  /* 🔥 NEW */
   border: 1px solid rgba(120,160,255,0.25);
   box-shadow:
     0 0 25px rgba(80,120,255,0.15),
@@ -108,22 +107,30 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== INPUT FIELD ===== */
+/* ===== INPUT FIX (🔥 IMPORTANT FIX) ===== */
 /* ===================================================== */
 
+input,
 textarea {
   width: 100%;
-  min-height: 200px;
-  padding: 14px;
+  padding: 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
   background: rgba(10, 20, 50, 0.6);
   color: #ffffff;
   font-size: 14px;
-  resize: vertical;
   outline: none;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  transition: 0.2s;
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+input:focus,
 textarea:focus {
   border: 1px solid #4da6ff;
   box-shadow: 0 0 10px rgba(77,166,255,0.3);
@@ -166,6 +173,54 @@ textarea:focus {
 
 
 /* ===================================================== */
+/* ===== STATUS GRID (🔥 RESTORED) ===== */
+/* ===================================================== */
+
+.status-grid {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.status-card {
+  background: rgba(10,20,50,0.75);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  width: 260px;
+
+  border: 1px solid rgba(120,160,255,0.2);
+}
+
+
+/* ===================================================== */
+/* ===== CENTER FIX ===== */
+/* ===================================================== */
+
+.centered-section {
+  text-align: center;
+}
+
+.centered-text {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.center-list {
+  list-style: none;
+  padding: 0;
+  text-align: center;
+}
+
+.center-list li {
+  margin: 8px 0;
+}
+
+
+/* ===================================================== */
 /* ===== INBOX ===== */
 /* ===================================================== */
 
@@ -175,7 +230,6 @@ textarea:focus {
   margin-bottom: 10px;
   border-radius: 10px;
 
-  /* 🔥 subtle glow */
   border: 1px solid rgba(120,160,255,0.15);
   transition: 0.2s;
 }
@@ -209,8 +263,6 @@ textarea:focus {
 .scan-box {
   margin-top: 20px;
   padding: 20px;
-
-  /* 🔥 IMPROVED */
   background: rgba(10,20,50,0.7);
   border-radius: 12px;
   border: 1px solid rgba(120,160,255,0.3);
@@ -247,6 +299,7 @@ textarea:focus {
   padding: 12px;
   border-radius: 10px;
   border: 1px solid rgba(120,160,255,0.2);
+  word-break: break-word;
 }
 
 .phishing-word {
@@ -262,11 +315,12 @@ textarea:focus {
   color: #00ccff;
   padding: 2px 6px;
   border-radius: 6px;
+  word-break: break-all;
 }
 
 
 /* ===================================================== */
-/* ===== ANALYSIS BOX (🔥 MAIN FIX) */
+/* ===== ANALYSIS BOX ===== */
 /* ===================================================== */
 
 .analysis-box {
@@ -274,7 +328,6 @@ textarea:focus {
   padding: 15px;
   border-radius: 12px;
 
-  /* 🔥 MAKE IT POP */
   border: 1px solid rgba(100,140,255,0.4);
   box-shadow: 0 0 18px rgba(80,120,255,0.25);
 
