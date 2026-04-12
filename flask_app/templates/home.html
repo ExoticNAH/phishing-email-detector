@@ -14,8 +14,10 @@
       AI-powered email security using machine learning
   </p>
 
+  <!-- ✅ Safe session display -->
   <p class="system-desc" style="margin-bottom:20px;">
-      Connected Email: <strong>{{ session.email }}</strong>
+      Connected Email: 
+      <strong>{{ session.get('email', 'Not Connected') }}</strong>
   </p>
 
   <div class="action-buttons">
@@ -26,7 +28,7 @@
 
     <a href="/setup" class="btn">🔄 Reconnect Email</a>
 
-    <a href="/logout" class="btn">🚪 Logout</a>
+    <a href="/logout" class="btn btn-danger">🚪 Logout</a>
 
   </div>
 
@@ -39,7 +41,13 @@
 
     <div class="status-card">
       <h3>📧 Email Connection</h3>
-      <p class="status-ok">Active</p>
+      <p class="status-ok">
+        {% if session.get('email') %}
+            Active
+        {% else %}
+            Not Connected
+        {% endif %}
+      </p>
     </div>
 
     <div class="status-card">
@@ -52,6 +60,13 @@
   <p class="system-desc">
     This system analyzes email content using a trained AI model to detect potential phishing attacks.
   </p>
+
+  <!-- ✅ Security Notice -->
+  <div class="card" style="margin-top:20px;">
+    <p class="system-desc" style="text-align:center;">
+      🔒 Your session is temporary and will expire automatically for security purposes.
+    </p>
+  </div>
 
 </div>
 

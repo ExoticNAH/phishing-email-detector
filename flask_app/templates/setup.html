@@ -12,12 +12,16 @@
 
     <form method="POST">
 
+        <!-- ✅ CSRF TOKEN (IMPORTANT) -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <label>Email Address</label>
         <input 
             type="email"
             name="email"
             placeholder="example@gmail.com"
             required
+            autocomplete="email"
         >
 
         <label style="margin-top:15px;">Google App Password</label>
@@ -26,6 +30,7 @@
             name="password"
             placeholder="16-character Gmail App Password"
             required
+            autocomplete="new-password"
         >
 
         <div class="actions">

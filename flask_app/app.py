@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
+from flask_wtf import CSRFProtect
 
 # FIXED IMPORT PATHS FOR DEPLOYMENT
 from flask_app.imap_service import fetch_emails, fetch_email_by_id
@@ -16,9 +17,18 @@ from datetime import timedelta
 
 app = Flask(__name__)
 
-# ---------- SESSION CONFIG ----------
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
-app.permanent_session_lifetime = timedelta(minutes=30)
+# ---------- SECURITY CONFIG ----------
+app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=True,   # IMPORTANT for HTTPS (Render)
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=15)
+)
+
+# ---------- CSRF PROTECTION ----------
+csrf = CSRFProtect(app)
 
 
 # ---------- RATE LIMITER ----------
@@ -60,13 +70,11 @@ def sanitize_email_html(html_content):
     )
 
     if script_detected:
-
         warning = """
         <div class="xss-warning">
         ⚠ Malicious script removed for security
         </div>
         """
-
         clean_html = warning + clean_html
 
     return clean_html
@@ -118,14 +126,10 @@ Email Content:
 {email_content}
 
 Explain briefly why this email may be phishing or legitimate.
-
-Then provide recommended actions for the user to stay safe.
-
-Keep the explanation clear, short and simple without special symbols.
+Then provide recommended actions for the user.
 """
 
     try:
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
@@ -135,45 +139,34 @@ Keep the explanation clear, short and simple without special symbols.
         return response.choices[0].message.content
 
     except Exception as e:
-
         print("ChatGPT error:", e)
-        return "AI explanation currently unavailable."
+        return "AI explanation unavailable."
 
 
 # ---------- CHATGPT RISK EXPLANATION ----------
 def explain_risk_with_ai(risk):
 
-    prompt = f"""
-Explain why the following is considered a phishing indicator in emails:
-
-{risk}
-
-Provide a short cybersecurity explanation suitable for normal users.
-"""
-
     try:
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": risk}],
             temperature=0.2
         )
 
         return response.choices[0].message.content
 
     except Exception as e:
-
         print("Risk explanation error:", e)
         return "Unable to generate explanation."
 
 
-# ---------- WELCOME SCREEN ----------
+# ---------- WELCOME ----------
 @app.route("/")
 def welcome():
     return render_template("welcome.html")
 
 
-# ---------- HOME DASHBOARD ----------
+# ---------- HOME ----------
 @app.route("/home")
 def home():
 
@@ -192,9 +185,11 @@ def setup():
         email = request.form.get("email")
         password = request.form.get("password")
 
+        # 🔥 PREVENT SESSION FIXATION
+        session.clear()
+
         session["email"] = email
         session["password"] = password
-
         session.permanent = True
 
         return redirect("/home")
@@ -207,7 +202,6 @@ def setup():
 def logout():
 
     session.clear()
-
     return redirect("/")
 
 
@@ -218,15 +212,10 @@ def inbox():
     if "email" not in session:
         return redirect("/setup")
 
-    email = session["email"]
-    password = session["password"]
-
     try:
-
-        emails = fetch_emails(email, password, limit=15)
+        emails = fetch_emails(session["email"], session["password"], limit=15)
 
     except Exception as e:
-
         emails = []
         print("IMAP error:", e)
 
@@ -240,15 +229,14 @@ def view_email(email_id):
     if "email" not in session:
         return redirect("/setup")
 
-    email = session["email"]
-    password = session["password"]
-
     try:
+        email_data = fetch_email_by_id(
+            session["email"],
+            session["password"],
+            email_id
+        )
 
-        email_data = fetch_email_by_id(email, password, email_id)
-
-        safe_body = sanitize_email_html(email_data.get("body", ""))
-        email_data["body"] = safe_body
+        email_data["body"] = sanitize_email_html(email_data.get("body", ""))
 
     except Exception as e:
 
@@ -257,7 +245,7 @@ def view_email(email_id):
         email_data = {
             "from": "Error",
             "subject": "Unable to load email",
-            "body": "There was a problem retrieving this email.",
+            "body": "Error retrieving email.",
             "attachments": [],
             "dangerous_attachment": False
         }
@@ -265,13 +253,13 @@ def view_email(email_id):
     return render_template("email_view.html", email=email_data)
 
 
-# ---------- MANUAL SCAN ----------
+# ---------- MANUAL ----------
 @app.route("/manual")
 def manual():
     return render_template("manual_scan.html")
 
 
-# ---------- EMAIL SCAN ----------
+# ---------- SCAN ----------
 @app.route("/scan", methods=["POST"])
 @limiter.limit("10 per minute")
 def scan():
@@ -279,28 +267,22 @@ def scan():
     content = request.form.get("content", "").strip()
 
     if not content:
-
         return jsonify({
             "label": "UNKNOWN",
             "confidence": 0,
             "risks": [],
-            "analysis": "No email content provided."
+            "analysis": "No content provided."
         })
 
     try:
-
         label, confidence = predict_email(content)
 
-        label = label.strip().upper()
-        confidence = round(confidence)
-
         risks = extract_risks(content)
-
         analysis = generate_ai_analysis(content, label, risks)
 
         return jsonify({
-            "label": label,
-            "confidence": confidence,
+            "label": label.upper(),
+            "confidence": round(confidence),
             "risks": risks,
             "analysis": analysis
         })
@@ -313,11 +295,11 @@ def scan():
             "label": "ERROR",
             "confidence": 0,
             "risks": [],
-            "analysis": "System error occurred during scanning."
+            "analysis": "System error occurred."
         })
 
 
-# ---------- RISK EXPLANATION ----------
+# ---------- EXPLAIN RISK ----------
 @app.route("/explain-risk", methods=["POST"])
 @limiter.limit("30 per minute")
 def explain_risk():
@@ -332,6 +314,6 @@ def explain_risk():
     return jsonify({"explanation": explanation})
 
 
-# ---------- RUN APP ----------
+# ---------- RUN ----------
 if __name__ == "__main__":
     app.run()
