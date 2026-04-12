@@ -6,3 +6,4 @@ cryptography
 bleach
 flask-limiter
 gunicorn
+Flask-WTF
