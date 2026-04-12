@@ -10,6 +10,8 @@ from flask_limiter.util import get_remote_address
 
 import os
 import bleach
+import re
+from urllib.parse import urlparse
 from datetime import timedelta
 
 
@@ -26,10 +28,8 @@ app.config.update(
     WTF_CSRF_SSL_STRICT=False
 )
 
-# ---------- CSRF ----------
 csrf = CSRFProtect(app)
 
-# ---------- SESSION ----------
 @app.before_request
 def make_session_permanent():
     session.permanent = True
@@ -42,12 +42,14 @@ limiter = Limiter(
     default_limits=["200 per hour"]
 )
 
+
 # ---------- OPENAI ----------
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=OPENAI_KEY)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
+# =====================================================
 # ---------- SANITIZATION ----------
+# =====================================================
 def sanitize_email_html(html_content):
 
     if not html_content:
@@ -67,15 +69,15 @@ def sanitize_email_html(html_content):
 
     if script_detected:
         clean_html = """
-        <div class="xss-warning">
-        ⚠ Malicious script removed
-        </div>
+        <div class="xss-warning">⚠ Malicious script removed</div>
         """ + clean_html
 
     return clean_html
 
 
+# =====================================================
 # ---------- RISK DETECTION ----------
+# =====================================================
 def extract_risks(text):
 
     risks = []
@@ -96,10 +98,86 @@ def extract_risks(text):
     if "attachment" in t:
         risks.append("Suspicious attachment")
 
-    return list(set(risks))  # remove duplicates
+    return list(set(risks))
 
 
-# ---------- AI ANALYSIS (CLEAN + STRUCTURED) ----------
+# =====================================================
+# ---------- DOMAIN EXTRACTION ----------
+# =====================================================
+def extract_domains(text):
+
+    urls = re.findall(r'https?://[^\s]+', text)
+    domains = []
+
+    for url in urls:
+        try:
+            domain = urlparse(url).hostname
+            if domain:
+                domains.append(domain)
+        except:
+            pass
+
+    return domains
+
+
+# =====================================================
+# ---------- OPENAI DOMAIN ANALYSIS ----------
+# =====================================================
+def ai_domain_analysis(domain):
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": f"""
+You are a cybersecurity expert.
+
+Analyze this domain:
+{domain}
+
+Determine:
+- Is it legitimate or phishing?
+- Does it mimic a real brand?
+
+Respond EXACTLY like:
+
+Risk: <Safe or Suspicious>
+Reason: <short explanation>
+"""
+            }],
+            temperature=0.2,
+            max_tokens=100
+        )
+
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        return f"AI error: {str(e)}"
+
+
+# =====================================================
+# ---------- DOMAIN ANALYSIS COMBINED ----------
+# =====================================================
+def analyze_domains(text):
+
+    domains = extract_domains(text)
+    results = []
+
+    for d in domains:
+        ai_result = ai_domain_analysis(d)
+
+        results.append({
+            "domain": d,
+            "analysis": ai_result
+        })
+
+    return results
+
+
+# =====================================================
+# ---------- AI ANALYSIS ----------
+# =====================================================
 def generate_ai_analysis(email_content, label, risks):
 
     try:
@@ -113,23 +191,22 @@ You are a cybersecurity analyst.
 Email classification: {label}
 Detected risks: {risks}
 
-Respond in this EXACT format:
+STRICT FORMAT:
 
 Explanation:
-- Short explanation (2-3 lines)
-- if you detect any types of malicious types of attempt like xss attack etc u can mention it
+<short explanation 2 lines>
 
 Advice:
-- 1 clear action
-- 1 clear action
-- 1 clear action (max 4)
+- action
+- action
+- action
 
-Do NOT repeat content.
-Do NOT add extra sections.
+Do NOT repeat.
+Do NOT duplicate advice.
 """
             }],
             temperature=0.2,
-            max_tokens=300
+            max_tokens=250
         )
 
         return response.choices[0].message.content.strip()
@@ -139,7 +216,9 @@ Do NOT add extra sections.
         return "AI analysis unavailable."
 
 
+# =====================================================
 # ---------- ROUTES ----------
+# =====================================================
 @app.route("/")
 def welcome():
     return render_template("welcome.html")
@@ -208,7 +287,20 @@ def view_email(email_id):
             email_id
         )
 
-        email_data["body"] = sanitize_email_html(email_data.get("body",""))
+        body = email_data.get("body", "")
+
+        # 🔥 highlight keywords
+        keywords = ["urgent","verify","password","login","click"]
+
+        for k in keywords:
+            body = re.sub(
+                f"({k})",
+                r'<span class="phishing-word">\1</span>',
+                body,
+                flags=re.IGNORECASE
+            )
+
+        email_data["body"] = sanitize_email_html(body)
 
     except Exception as e:
         print("Fetch error:", e)
@@ -230,7 +322,9 @@ def manual():
     return render_template("manual_scan.html")
 
 
+# =====================================================
 # ---------- SCAN ----------
+# =====================================================
 @csrf.exempt
 @app.route("/scan", methods=["POST"])
 @limiter.limit("10 per minute")
@@ -243,24 +337,29 @@ def scan():
             "label":"UNKNOWN",
             "confidence":0,
             "risks":[],
-            "analysis":"No content"
+            "analysis":"No content",
+            "domains":[]
         })
 
     try:
-        # 🔍 ML MODEL
+        # ML
         label, confidence = predict_email(content)
 
-        # ⚠️ RISKS
+        # Risks
         risks = extract_risks(content)
 
-        # 🤖 ALWAYS USE OPENAI (as requested)
+        # AI Explanation
         analysis = generate_ai_analysis(content, label, risks)
+
+        # 🔥 DOMAIN AI CHECK
+        domains = analyze_domains(content)
 
         return jsonify({
             "label": label.upper(),
             "confidence": round(float(confidence), 2),
             "risks": risks,
-            "analysis": analysis
+            "analysis": analysis,
+            "domains": domains
         })
 
     except Exception as e:
@@ -270,7 +369,8 @@ def scan():
             "label":"ERROR",
             "confidence":0,
             "risks":[],
-            "analysis":"Scan failed"
+            "analysis":"Scan failed",
+            "domains":[]
         })
 
 
@@ -280,9 +380,6 @@ def scan():
 def explain_risk():
 
     risk = request.form.get("risk","")
-
-    if not risk:
-        return jsonify({"explanation":"No risk provided"})
 
     explanation = generate_ai_analysis(risk, "INFO", [])
 

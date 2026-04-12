@@ -17,7 +17,7 @@
     <!-- EMAIL BODY -->
     <div class="email-body">
         <div id="email-content" class="email-text">
-            {{ email.body | replace('\n', '<br>') | safe }}
+            {{ email.body | safe }}
         </div>
     </div>
 
@@ -50,54 +50,6 @@
 
 
 <script>
-
-/* ---------- Extract Links ---------- */
-function extractLinks(text){
-    return text.match(/https?:\/\/[^\s]+/g) || [];
-}
-
-
-/* ---------- Highlight Words ---------- */
-function highlightContent(text){
-
-    const words = [
-        "urgent","verify","password","login","click",
-        "account","suspended","security","bank",
-        "confirm","immediately"
-    ];
-
-    let result = text;
-
-    words.forEach(w=>{
-        const r = new RegExp(`\\b(${w})\\b`,"gi");
-        result = result.replace(r,
-        `<span class="phishing-word">$1</span>`);
-    });
-
-    result = result.replace(/(https?:\/\/[^\s]+)/g,
-        `<span class="phishing-link">$1</span>`);
-
-    return result;
-}
-
-
-/* ---------- Domain Check ---------- */
-function checkDomain(url){
-
-    try{
-        const domain = new URL(url).hostname;
-
-        if(domain.includes("verify") || domain.includes("secure")){
-            return `⚠ Suspicious domain: ${domain}`;
-        }
-
-        return `✔ Domain looks normal: ${domain}`;
-
-    }catch{
-        return "Invalid URL";
-    }
-}
-
 
 /* ---------- Explain Risk ---------- */
 function explainRisk(risk){
@@ -165,18 +117,15 @@ document.getElementById("scan-btn").addEventListener("click", function () {
             </li>`;
         }).join("");
 
-        /* ---------- LINKS ---------- */
-        let links = extractLinks(rawText);
+        /* ---------- DOMAIN (FROM BACKEND AI) ---------- */
+        let domainHtml = data.domains.map(d => `
+            <li>
+                <strong>${d.domain}</strong><br>
+                <small>${d.analysis.replace(/\n/g,"<br>")}</small>
+            </li>
+        `).join("");
 
-        let linksHtml = links.map(l=>
-            `<li>
-                ${l}
-                <br>
-                <small>${checkDomain(l)}</small>
-            </li>`
-        ).join("");
-
-        /* ---------- ANALYSIS FORMAT ---------- */
+        /* ---------- ANALYSIS ---------- */
         let formattedAnalysis = data.analysis
             .replace(/Explanation:/g,"<strong>Explanation:</strong><br>")
             .replace(/Advice:/g,"<br><strong>Advice:</strong><br>")
@@ -201,17 +150,17 @@ document.getElementById("scan-btn").addEventListener("click", function () {
 
         <hr>
 
-        <h4>⚠ Risks</h4>
+        <h4>⚠ Risk Factors</h4>
         <ul class="risk-list">
             ${risksHtml || "<li>No risk detected</li>"}
         </ul>
 
-        <h4>🔗 Links</h4>
+        <h4>🌐 Domain Analysis</h4>
         <ul>
-            ${linksHtml || "<li>No links found</li>"}
+            ${domainHtml || "<li>No domains found</li>"}
         </ul>
 
-        <h4>📊 Analysis</h4>
+        <h4>📊 AI Analysis</h4>
         <div class="analysis-box">
             ${formattedAnalysis}
         </div>

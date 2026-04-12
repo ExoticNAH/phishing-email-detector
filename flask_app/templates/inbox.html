@@ -1,14 +1,16 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
 {% block content %}
 
-<div class="card">
+<div class="card inbox-container">
 
+    <!-- HEADER -->
     <div class="inbox-header">
         <a href="/home" class="btn">← Dashboard</a>
         <h2>📥 Email Inbox</h2>
         <span class="refresh-indicator">Auto refresh: 15s</span>
     </div>
 
+    <!-- EMAIL LIST -->
     <div id="inbox-container">
 
         {% if emails %}
@@ -26,10 +28,10 @@
                     "security" in subject
                 ) %}
 
-                <div class="email-item clickable {% if suspicious %}suspicious-email{% endif %}"
+                <div class="email-item clickable {% if suspicious %}email-danger{% endif %}"
                      onclick="window.location.href='/email/{{ email.id }}'">
 
-                    <!-- LEFT SIDE -->
+                    <!-- LEFT -->
                     <div class="email-left">
 
                         <div class="email-from">
@@ -42,13 +44,13 @@
 
                     </div>
 
-                    <!-- RIGHT SIDE -->
+                    <!-- RIGHT (clean minimalist indicator) -->
                     <div class="email-right">
 
                         {% if suspicious %}
-                            <span class="badge badge-risk">⚠ Suspicious</span>
+                            <span class="email-indicator danger"></span>
                         {% else %}
-                            <span class="badge badge-safe">✔ Safe</span>
+                            <span class="email-indicator safe"></span>
                         {% endif %}
 
                     </div>
@@ -84,11 +86,13 @@ function refreshInbox(){
 
         const newInbox = doc.querySelector("#inbox-container");
 
-        document.querySelector("#inbox-container").innerHTML =
-            newInbox.innerHTML;
+        if(newInbox){
+            document.querySelector("#inbox-container").innerHTML =
+                newInbox.innerHTML;
+        }
 
-    });
-
+    })
+    .catch(err => console.error("Refresh error:", err));
 }
 
 /* Refresh every 15 seconds */

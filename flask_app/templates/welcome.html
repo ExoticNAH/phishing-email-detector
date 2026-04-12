@@ -3,33 +3,93 @@
 
 <div class="welcome-screen">
 
+    <!-- LOGO -->
     <img src="{{ url_for('static', filename='logo.png') }}" class="welcome-logo">
 
+    <!-- TITLE -->
     <h1 class="welcome-title">
         Phishing Email Detection System
     </h1>
 
+    <!-- SUBTITLE -->
     <p class="welcome-subtitle">
         AI-powered email security using machine learning
     </p>
 
+    <!-- LOADING -->
     <p class="loading-dots">Initializing system...</p>
 
 </div>
 
+
+<style>
+
+/* ===== WELCOME SCREEN FIX ===== */
+
+.welcome-screen {
+    height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    animation: fadeIn 1s ease-in-out;
+}
+
+/* LOGO - BIG BUT CLEAN */
+.welcome-logo {
+    width: 180px;   /* 🔥 Perfect size (not too huge) */
+    max-width: 40%;
+    margin-bottom: 20px;
+
+    filter: drop-shadow(0 10px 25px rgba(0,0,0,0.6));
+}
+
+/* TITLE */
+.welcome-title {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+/* SUBTITLE */
+.welcome-subtitle {
+    color: #c9d4ff;
+    margin-bottom: 20px;
+}
+
+/* LOADING TEXT */
+.loading-dots {
+    color: #9fb3ff;
+    font-size: 14px;
+    animation: blink 1.5s infinite;
+}
+
+/* ANIMATION */
+@keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+</style>
+
+
 <script>
 
-// 🔥 Check session instead of blind redirect
+// 🔥 SMART SESSION CHECK
 setTimeout(function(){
 
     fetch("/home", { method: "GET" })
     .then(res => {
 
         if(res.redirected){
-            // If redirected → not logged in
             window.location.href = "/setup";
         } else {
-            // If allowed → go home
             window.location.href = "/home";
         }
 

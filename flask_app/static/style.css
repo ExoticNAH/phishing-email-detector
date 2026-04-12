@@ -72,7 +72,7 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== HEADER FIX ===== */
+/* ===== HEADER ===== */
 /* ===================================================== */
 
 .title-row {
@@ -83,7 +83,7 @@ h1, h2, h3 {
 }
 
 .title-logo {
-  width: 50px;
+  width: 45px;
 }
 
 .dashboard-title {
@@ -99,6 +99,28 @@ h1, h2, h3 {
 .session-info {
   text-align: center;
   margin: 15px 0;
+}
+
+
+/* ===================================================== */
+/* ===== CENTER SECTIONS ===== */
+/* ===================================================== */
+
+.center-section {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.center-list {
+  display: inline-block;
+  text-align: left;
+  margin-top: 10px;
+}
+
+.center-text {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 
@@ -126,7 +148,8 @@ h1, h2, h3 {
   transition: 0.2s;
 }
 
-.btn:hover {
+.btn:hover,
+.btn-primary:hover {
   transform: translateY(-2px);
 }
 
@@ -170,20 +193,20 @@ h1, h2, h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   background: rgba(10,20,50,0.85);
   padding: 15px;
   margin-bottom: 10px;
   border-left: 4px solid #6b8cff;
   border-radius: 10px;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 .email-item:hover {
   transform: translateX(4px);
 }
 
-.suspicious-email {
+.email-danger {
   border-left: 4px solid #ff4d4d;
 }
 
@@ -193,12 +216,12 @@ h1, h2, h3 {
 }
 
 .email-from {
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .email-subject {
-  font-size: 14px;
   color: #c9d4ff;
+  font-size: 14px;
 }
 
 .email-right {
@@ -206,20 +229,18 @@ h1, h2, h3 {
   align-items: center;
 }
 
-.badge {
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 12px;
+.email-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.badge-risk {
-  background: rgba(255,0,0,0.2);
-  color: #ff6b6b;
+.email-indicator.safe {
+  background: #00c853;
 }
 
-.badge-safe {
-  background: rgba(0,255,150,0.2);
-  color: #00ff99;
+.email-indicator.danger {
+  background: #ff4d4d;
 }
 
 
@@ -235,7 +256,7 @@ h1, h2, h3 {
 }
 
 .email-text {
-  white-space: normal;
+  white-space: pre-wrap;   /* 🔥 FIXED (IMPORTANT) */
 }
 
 
@@ -248,6 +269,7 @@ h1, h2, h3 {
   padding: 20px;
   background: rgba(10,20,50,0.85);
   border-left: 4px solid #6b8cff;
+  border-radius: 10px;
 }
 
 .result-label {
@@ -260,8 +282,10 @@ h1, h2, h3 {
 
 .confidence-bar {
   height: 8px;
-  background: #222;
+  background: #1a1f3d;
   border-radius: 5px;
+  overflow: hidden;
+  margin-top: 8px;
 }
 
 .confidence-fill {
@@ -278,6 +302,7 @@ h1, h2, h3 {
   background: rgba(10,20,50,0.85);
   padding: 12px;
   border-radius: 10px;
+  line-height: 1.6;
 }
 
 .phishing-word {
@@ -296,10 +321,67 @@ h1, h2, h3 {
 /* ===================================================== */
 
 .analysis-box {
-  background: rgba(0,0,0,0.4);
+  background: rgba(10,20,50,0.6); /* 🔥 FIXED (no more black) */
   padding: 15px;
   border-radius: 10px;
   line-height: 1.6;
+}
+
+
+/* ===================================================== */
+/* ===== EXPLAIN BUTTON ===== */
+/* ===================================================== */
+
+.explain-btn {
+  margin-left: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg,#3f6cff,#6b8cff);
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.explain-btn:hover {
+  opacity: 0.8;
+}
+
+.risk-explanation {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #c9d4ff;
+}
+
+
+/* ===================================================== */
+/* ===== WELCOME SCREEN ===== */
+/* ===================================================== */
+
+.welcome-screen {
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.welcome-logo {
+  width: 180px;
+  margin-bottom: 20px;
+}
+
+.welcome-title {
+  font-size: 28px;
+}
+
+.welcome-subtitle {
+  color: #c9d4ff;
+}
+
+.loading-dots {
+  color: #9fb3ff;
 }
 
 

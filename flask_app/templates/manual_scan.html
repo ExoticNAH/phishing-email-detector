@@ -28,12 +28,6 @@
 
 <script>
 
-/* ---------- Extract Links ---------- */
-function extractLinks(text){
-    return text.match(/https?:\/\/[^\s]+/g) || [];
-}
-
-
 /* ---------- Highlight Words ---------- */
 function highlightContent(text){
 
@@ -54,24 +48,6 @@ function highlightContent(text){
         `<span class="phishing-link">$1</span>`);
 
     return result;
-}
-
-
-/* ---------- Domain Check ---------- */
-function checkDomain(url){
-
-    try{
-        const domain = new URL(url).hostname;
-
-        if(domain.includes("verify") || domain.includes("secure")){
-            return `⚠ Suspicious domain: ${domain}`;
-        }
-
-        return `✔ Domain looks normal: ${domain}`;
-
-    }catch{
-        return "Invalid URL";
-    }
 }
 
 
@@ -115,12 +91,13 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
             `<li>${r}</li>`
         ).join("");
 
-        /* ---------- LINKS ---------- */
-        let links = extractLinks(content);
-
-        let linksHtml = links.map(l =>
-            `<li>${l}<br><small>${checkDomain(l)}</small></li>`
-        ).join("");
+        /* ---------- DOMAIN (FROM BACKEND AI) ---------- */
+        let domainHtml = data.domains.map(d => `
+            <li>
+                <strong>${d.domain}</strong><br>
+                <small>${d.analysis.replace(/\n/g,"<br>")}</small>
+            </li>
+        `).join("");
 
         /* ---------- FORMAT ANALYSIS ---------- */
         let formattedAnalysis = data.analysis
@@ -152,9 +129,9 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
             ${risksHtml || "<li>No risk detected</li>"}
         </ul>
 
-        <h4>🔗 Detected Links</h4>
+        <h4>🌐 Domain Analysis</h4>
         <ul>
-            ${linksHtml || "<li>No links found</li>"}
+            ${domainHtml || "<li>No domains found</li>"}
         </ul>
 
         <h4>📌 Highlighted Content</h4>

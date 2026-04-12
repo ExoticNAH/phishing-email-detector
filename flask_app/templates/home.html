@@ -5,7 +5,7 @@
 
   <div class="card dashboard">
 
-    <!-- 🔥 FIXED HEADER (INLINE LOGO + TEXT) -->
+    <!-- 🔥 HEADER -->
     <div class="dashboard-header">
 
         <div class="title-row">
@@ -21,13 +21,13 @@
         AI-powered email security with machine learning and threat analysis
     </p>
 
-    <!-- 🔐 SESSION STATUS -->
+    <!-- 🔐 SESSION -->
     <div class="session-info">
       🔗 Connected Email:
       <strong>{{ session.get('email', 'Not Connected') }}</strong>
     </div>
 
-    <!-- 🚀 ACTION BUTTONS -->
+    <!-- 🚀 BUTTONS -->
     <div class="action-buttons">
       <a href="/inbox" class="btn">📥 Inbox</a>
       <a href="/manual" class="btn">✍️ Manual Scan</a>
@@ -35,7 +35,7 @@
       <a href="/logout" class="btn btn-danger">🚪 Logout</a>
     </div>
 
-    <!-- 📊 SYSTEM STATUS -->
+    <!-- 📊 STATUS -->
     <div class="status-grid">
 
       <div class="status-card">
@@ -64,26 +64,32 @@
 
     </div>
 
-    <!-- 📌 FEATURES -->
-    <div class="info-section">
+    <!-- 📌 SYSTEM CAPABILITIES (CENTERED FIX) -->
+    <div class="info-section center-section">
+
       <h3>🔍 System Capabilities</h3>
-      <ul class="feature-list">
+
+      <ul class="feature-list center-list">
         <li>✔ AI-based phishing email classification</li>
         <li>✔ Link and domain analysis</li>
         <li>✔ Risk factor detection and explanation</li>
         <li>✔ Manual and inbox email scanning</li>
         <li>✔ Real-time threat highlighting</li>
       </ul>
+
     </div>
 
-    <!-- 🔒 SECURITY -->
-    <div class="info-section">
+    <!-- 🔒 SECURITY (CENTERED FIX) -->
+    <div class="info-section center-section">
+
       <h3>🔒 Security Information</h3>
-      <p class="system-desc">
+
+      <p class="system-desc center-text">
         Your email credentials are <strong>not stored permanently</strong>.
         The system uses <strong>session-based authentication</strong> and
         automatically clears data after logout or session expiration.
       </p>
+
     </div>
 
   </div>
