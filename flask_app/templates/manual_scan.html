@@ -9,9 +9,17 @@
         Paste email content to analyze phishing threats using AI.
     </p>
 
+    <!-- 🔥 FIXED TEXTAREA -->
     <textarea
         id="manual-content"
         placeholder="Paste email content here..."
+        style="
+            min-height: 220px;
+            height: 260px;
+            resize: vertical;
+            line-height: 1.6;
+            font-family: monospace;
+        "
     ></textarea>
 
     <div class="actions">
@@ -139,7 +147,6 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
             ? "label-danger"
             : "label-safe";
 
-        /* ---------- RISKS ---------- */
         let risksHtml = data.risks && data.risks.length > 0
             ? data.risks.map(r=>{
                 const id = r.replace(/\s/g,'');
@@ -153,7 +160,6 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
             }).join("")
             : "<li>No risk detected</li>";
 
-        /* ---------- DOMAIN ---------- */
         let domainHtml = data.domains && data.domains.length > 0
             ? data.domains.map(d => `
                 <li>
@@ -163,12 +169,10 @@ document.getElementById("manual-scan-btn").addEventListener("click", function(){
             `).join("")
             : "<li>No domains found</li>";
 
-        /* ---------- ANALYSIS ---------- */
         let formattedAnalysis = data.analysis
             ? data.analysis.replace(/\n/g,"<br>")
             : "No analysis available";
 
-        /* ---------- ADVICE ---------- */
         let formattedAdvice = data.advice
             ? data.advice.replace(/\n/g,"<br>")
             : "No advice available";
