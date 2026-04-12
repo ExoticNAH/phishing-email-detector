@@ -1,103 +1,85 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container">
+<div class="dashboard-container">
 
-<div class="card dashboard">
+  <div class="card dashboard">
 
-  <h1 class="dashboard-title">
-      <img src="{{ url_for('static', filename='logo.png') }}" class="title-logo">
-      Phishing Email Detection System
-  </h1>
+    <h1 class="dashboard-title">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="title-logo">
+        Phishing Email Detection System
+    </h1>
 
-  <p class="subtitle">
-      AI-powered email security with machine learning and threat analysis
-  </p>
+    <p class="subtitle">
+        AI-powered email security with machine learning and threat analysis
+    </p>
 
-  <!-- 🔐 SESSION STATUS -->
-  <div class="session-info">
-    <p>
+    <!-- 🔐 SESSION STATUS -->
+    <div class="session-info">
       🔗 Connected Email:
       <strong>{{ session.get('email', 'Not Connected') }}</strong>
-    </p>
-  </div>
-
-
-  <!-- 🚀 ACTION BUTTONS -->
-  <div class="action-buttons">
-
-    <a href="/inbox" class="btn">📥 Inbox</a>
-
-    <a href="/manual" class="btn">✍️ Manual Scan</a>
-
-    <a href="/setup" class="btn">🔄 Reconnect</a>
-
-    <a href="/logout" class="btn btn-danger">🚪 Logout</a>
-
-  </div>
-
-
-  <!-- 📊 SYSTEM STATUS -->
-  <div class="status-grid">
-
-    <div class="status-card">
-      <h3>🤖 AI Model</h3>
-      <p class="status-ok">Loaded</p>
-      <small>Transformer-based classifier</small>
     </div>
 
-    <div class="status-card">
-      <h3>📧 Email Connection</h3>
-      <p class="{% if session.get('email') %}status-ok{% else %}status-danger{% endif %}">
-        {% if session.get('email') %}
-            Active
-        {% else %}
-            Not Connected
-        {% endif %}
+    <!-- 🚀 ACTION BUTTONS -->
+    <div class="action-buttons">
+      <a href="/inbox" class="btn">📥 Inbox</a>
+      <a href="/manual" class="btn">✍️ Manual Scan</a>
+      <a href="/setup" class="btn">🔄 Reconnect</a>
+      <a href="/logout" class="btn btn-danger">🚪 Logout</a>
+    </div>
+
+    <!-- 📊 SYSTEM STATUS -->
+    <div class="status-grid">
+
+      <div class="status-card">
+        <h3>🤖 AI Model</h3>
+        <p class="status-ok">Loaded</p>
+        <small>Transformer-based classifier</small>
+      </div>
+
+      <div class="status-card">
+        <h3>📧 Email Connection</h3>
+        <p class="{% if session.get('email') %}status-ok{% else %}status-danger{% endif %}">
+          {% if session.get('email') %}
+              Active
+          {% else %}
+              Not Connected
+          {% endif %}
+        </p>
+        <small>Session-based authentication</small>
+      </div>
+
+      <div class="status-card">
+        <h3>🛡 Detection Engine</h3>
+        <p class="status-ok">Running</p>
+        <small>Real-time phishing detection</small>
+      </div>
+
+    </div>
+
+    <!-- 📌 FEATURES -->
+    <div class="info-section">
+      <h3>🔍 System Capabilities</h3>
+      <ul class="feature-list">
+        <li>✔ AI-based phishing email classification</li>
+        <li>✔ Link and domain analysis</li>
+        <li>✔ Risk factor detection and explanation</li>
+        <li>✔ Manual and inbox email scanning</li>
+        <li>✔ Real-time threat highlighting</li>
+      </ul>
+    </div>
+
+    <!-- 🔒 SECURITY -->
+    <div class="info-section">
+      <h3>🔒 Security Information</h3>
+      <p class="system-desc">
+        Your email credentials are <strong>not stored permanently</strong>.
+        The system uses <strong>session-based authentication</strong> and
+        automatically clears data after logout or session expiration.
       </p>
-      <small>Session-based authentication</small>
-    </div>
-
-    <div class="status-card">
-      <h3>🛡 Detection Engine</h3>
-      <p class="status-ok">Running</p>
-      <small>Real-time phishing detection</small>
     </div>
 
   </div>
-
-
-  <!-- 📌 FEATURES OVERVIEW -->
-  <div class="card" style="margin-top:20px;">
-
-    <h3>🔍 System Capabilities</h3>
-
-    <ul class="feature-list">
-      <li>✔ AI-based phishing email classification</li>
-      <li>✔ Link and domain analysis</li>
-      <li>✔ Risk factor detection and explanation</li>
-      <li>✔ Manual and inbox email scanning</li>
-      <li>✔ Real-time threat highlighting</li>
-    </ul>
-
-  </div>
-
-
-  <!-- 🔒 SECURITY NOTICE -->
-  <div class="card" style="margin-top:20px;">
-
-    <h3>🔒 Security Information</h3>
-
-    <p class="system-desc" style="text-align:center;">
-      Your email credentials are <strong>not stored permanently</strong>.
-      The system uses <strong>session-based authentication</strong> and will
-      automatically clear your data after logout or session expiration.
-    </p>
-
-  </div>
-
-
-</div>
 
 </div>
 

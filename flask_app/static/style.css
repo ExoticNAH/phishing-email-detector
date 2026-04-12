@@ -8,15 +8,24 @@ body {
   color: #ffffff;
 }
 
-.container {
-  max-width: 1100px;
-  margin: auto;
-  padding: 40px;
-}
-
 h1, h2, h3 {
   margin-top: 0;
   color: #ffffff;
+}
+
+
+/* ===================================================== */
+/* ===== MAIN LAYOUT FIX ===== */
+/* ===================================================== */
+
+.main-content {
+  padding: 40px 20px;
+  min-height: calc(100vh - 60px);
+}
+
+.dashboard-container {
+  display: flex;
+  justify-content: center;
 }
 
 
@@ -47,44 +56,27 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== WELCOME (FIXED CENTERING) ===== */
+/* ===== WELCOME ===== */
 /* ===================================================== */
 
 .welcome-screen {
   height: 100vh;
-  width: 100%;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
   text-align: center;
-  padding: 20px;
 }
 
 .welcome-logo {
   width: 140px;
   margin-bottom: 25px;
-  animation: fadeIn 0.8s ease;
 }
 
 .welcome-title {
   font-size: 42px;
-  margin-bottom: 10px;
 }
 
-.welcome-subtitle {
-  color: #c9d4ff;
-  margin-bottom: 10px;
-}
-
-.loading-dots {
-  color: #9fb3ff;
-  font-size: 14px;
-}
-
-/* 🔥 animated dots */
 .loading-dots::after {
   content: "...";
   animation: dots 1.5s infinite;
@@ -98,19 +90,20 @@ h1, h2, h3 {
 
 
 /* ===================================================== */
-/* ===== CARDS ===== */
+/* ===== CARD (FIXED WIDTH ISSUE) ===== */
 /* ===================================================== */
 
 .card,
 .email-card {
+  width: 100%;
+  max-width: 1000px;   /* 🔥 FIX HERE */
+  margin: 40px auto;
+  padding: 40px;
+
   background: rgba(15, 25, 60, 0.78);
   backdrop-filter: blur(10px);
   border-radius: 18px;
-  padding: 30px;
   box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-  animation: fadeIn 0.4s ease;
-  max-width: 900px;
-  margin: auto;
 }
 
 
@@ -120,21 +113,51 @@ h1, h2, h3 {
 
 .dashboard-title {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 12px;
-  font-size: 34px;
+  justify-content: center;
+  gap: 15px;
+  font-size: 32px;
+  text-align: center;
 }
 
 .subtitle {
-  color: #c9d4ff;
   text-align: center;
-  margin-bottom: 25px;
+  color: #c9d4ff;
 }
 
-.system-desc {
+.session-info {
   text-align: center;
-  color: #9fb3ff;
+  margin: 15px 0;
+  color: #ccc;
+}
+
+
+/* BUTTONS */
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+.btn,
+.btn-primary {
+  background: linear-gradient(135deg,#3f6cff,#6b8cff);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-danger {
+  background: #ff4d4d;
 }
 
 
@@ -142,8 +165,9 @@ h1, h2, h3 {
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
   gap: 20px;
+  margin-top: 20px;
 }
 
 .status-card {
@@ -152,11 +176,6 @@ h1, h2, h3 {
   padding: 20px;
   border: 1px solid rgba(100,140,255,0.4);
   text-align: center;
-  transition: 0.2s;
-}
-
-.status-card:hover {
-  transform: translateY(-4px);
 }
 
 .status-ok {
@@ -168,30 +187,13 @@ h1, h2, h3 {
 }
 
 
-/* ===================================================== */
-/* ===== BUTTONS ===== */
-/* ===================================================== */
+/* INFO SECTION */
 
-.btn,
-.btn-primary {
-  background: linear-gradient(135deg,#3f6cff,#6b8cff);
-  color: white;
-  padding: 12px 24px;
+.info-section {
+  background: rgba(255,255,255,0.03);
+  padding: 20px;
   border-radius: 12px;
-  cursor: pointer;
-  text-decoration:none;
-  border:none;
-  transition: 0.2s;
-}
-
-.btn:hover,
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-}
-
-.btn-danger {
-  background: #ff4d4d;
+  margin-top: 20px;
 }
 
 
@@ -199,20 +201,13 @@ h1, h2, h3 {
 /* ===== INPUT ===== */
 /* ===================================================== */
 
-input,
-textarea {
+input, textarea {
   width: 100%;
-  border-radius: 10px;
   padding: 12px;
+  border-radius: 10px;
   background: rgba(10,15,40,0.7);
   color: white;
   border: 1px solid rgba(120,150,255,0.4);
-}
-
-input:focus,
-textarea:focus {
-  border-color: #6b8cff;
-  outline: none;
 }
 
 
@@ -221,34 +216,20 @@ textarea:focus {
 /* ===================================================== */
 
 .email-item {
-  display: flex;
-  justify-content: space-between;
   background: rgba(10,20,50,0.85);
   padding: 15px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   border-left: 5px solid #6b8cff;
   border-radius: 10px;
   cursor: pointer;
-  transition: 0.2s;
 }
 
 .email-item:hover {
-  background: #1a1a2e;
   transform: translateX(4px);
 }
 
 .suspicious-email {
   border-left: 5px solid red;
-}
-
-.badge-risk {
-  color: #ff4d4d;
-  font-weight: bold;
-}
-
-.badge-safe {
-  color: #00cc66;
-  font-weight: bold;
 }
 
 
@@ -262,29 +243,6 @@ textarea:focus {
   border-radius: 10px;
   max-height: 350px;
   overflow: auto;
-}
-
-#email-content {
-  white-space: pre-line;
-  line-height: 1.6;
-}
-
-
-/* ===================================================== */
-/* ===== HIGHLIGHT ===== */
-/* ===================================================== */
-
-.phishing-word {
-  background: rgba(255,80,80,0.3);
-  color: #ff6b6b;
-  font-weight: bold;
-  padding: 2px 4px;
-}
-
-.phishing-link {
-  color: #ffcc00;
-  font-weight: bold;
-  text-decoration: underline;
 }
 
 
@@ -302,7 +260,6 @@ textarea:focus {
 .confidence-bar {
   height: 8px;
   background: #333;
-  border-radius: 10px;
 }
 
 .confidence-fill {
@@ -317,13 +274,3 @@ textarea:focus {
 
 .loading { color:#9fb3ff; }
 .error { color:#ff6b6b; }
-
-
-/* ===================================================== */
-/* ===== ANIMATION ===== */
-/* ===================================================== */
-
-@keyframes fadeIn {
-  from { opacity:0; transform:translateY(6px); }
-  to { opacity:1; transform:translateY(0); }
-}

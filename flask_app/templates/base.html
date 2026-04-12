@@ -14,10 +14,10 @@
   <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   <meta name="referrer" content="no-referrer">
 
-  <!-- 🎨 Main CSS -->
+  <!-- 🎨 CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-  <!-- 🌐 Google Font -->
+  <!-- 🌐 FONT -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 </head>
@@ -28,7 +28,7 @@
   <div class="navbar">
 
       <div class="nav-left">
-          <strong>🛡 Phishing Detector</strong>
+          🛡 <strong>Phishing Detector</strong>
       </div>
 
       <div class="nav-right">
@@ -41,21 +41,20 @@
   </div>
 
 
-  <!-- 🔔 GLOBAL ALERT (future use) -->
+  <!-- 🔔 ALERT -->
   <div id="global-alert" class="alert-box" style="display:none;"></div>
 
 
-  <!-- 📦 MAIN CONTENT -->
-  <div class="container">
+  <!-- 🚀 MAIN CONTENT (FIXED) -->
+  <main class="main-content">
 
       {% block content %}{% endblock %}
 
-  </div>
+  </main>
 
 
   <!-- ⚙ GLOBAL SCRIPT -->
   <script>
-
   function showAlert(message, type="info"){
 
       const alertBox = document.getElementById("global-alert");
@@ -75,9 +74,7 @@
           alertBox.style.display = "none";
       }, 3000);
   }
-
   </script>
 
 </body>
-
 </html>
