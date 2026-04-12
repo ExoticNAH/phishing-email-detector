@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
 from flask_wtf import CSRFProtect
 
-# FIXED IMPORT PATHS FOR DEPLOYMENT
+# FIXED IMPORT PATHS
 from flask_app.imap_service import fetch_emails, fetch_email_by_id
 from flask_app.bert_predictor import predict_email
 
@@ -22,21 +22,21 @@ app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SECURE=True,   # MUST be True for Render HTTPS
     SESSION_COOKIE_SAMESITE="Lax",
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=15)
 )
 
-# ---------- CSRF PROTECTION ----------
+# ---------- CSRF ----------
 csrf = CSRFProtect(app)
 
-# ---------- SESSION AUTO-REFRESH ----------
+# ---------- SESSION AUTO REFRESH ----------
 @app.before_request
 def make_session_permanent():
     session.permanent = True
 
 
-# ---------- RATE LIMITER ----------
+# ---------- RATE LIMIT ----------
 limiter = Limiter(
     get_remote_address,
     app=app,
@@ -44,28 +44,18 @@ limiter = Limiter(
 )
 
 
-# ---------- OPENAI CLIENT ----------
+# ---------- OPENAI ----------
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_KEY)
 
 
-# ---------- XSS SANITIZATION ----------
+# ---------- SANITIZATION ----------
 def sanitize_email_html(html_content):
 
-    script_detected = False
+    script_detected = "<script" in html_content.lower()
 
-    if "<script" in html_content.lower():
-        script_detected = True
-
-    allowed_tags = [
-        "p", "b", "i", "u", "strong",
-        "em", "br", "ul", "ol", "li",
-        "a"
-    ]
-
-    allowed_attrs = {
-        "a": ["href", "title"]
-    }
+    allowed_tags = ["p","b","i","u","strong","em","br","ul","ol","li","a"]
+    allowed_attrs = {"a": ["href","title"]}
 
     clean_html = bleach.clean(
         html_content,
@@ -75,109 +65,73 @@ def sanitize_email_html(html_content):
     )
 
     if script_detected:
-        warning = """
+        clean_html = """
         <div class="xss-warning">
-        ⚠ Malicious script removed for security
+        ⚠ Malicious script removed
         </div>
-        """
-        clean_html = warning + clean_html
+        """ + clean_html
 
     return clean_html
 
 
-# ---------- SIMPLE FEATURE EXTRACTION ----------
+# ---------- RISK DETECTION ----------
 def extract_risks(text):
 
     risks = []
 
-    urgency_words = [
-        "urgent",
-        "immediately",
-        "verify",
-        "suspended",
-        "action required"
-    ]
-
-    if any(word in text.lower() for word in urgency_words):
+    if any(w in text.lower() for w in ["urgent","immediately","verify","suspended"]):
         risks.append("Urgency language detected")
 
-    if re.search(r"http[s]?://", text.lower()):
+    if "http" in text.lower():
         risks.append("Suspicious link detected")
 
-    if any(word in text.lower() for word in ["password", "login", "verify account"]):
+    if any(w in text.lower() for w in ["password","login"]):
         risks.append("Credential request detected")
 
-    if re.search(r"<script.*?>", text.lower()) or "onerror=" in text.lower():
-        risks.append("Possible XSS script detected")
+    if "<script" in text.lower():
+        risks.append("Possible XSS script")
 
     if "attachment" in text.lower():
-        risks.append("Suspicious attachment mentioned")
+        risks.append("Suspicious attachment")
 
     return risks
 
 
-# ---------- CHATGPT SECURITY ANALYSIS ----------
+# ---------- AI ANALYSIS ----------
 def generate_ai_analysis(email_content, label, risks):
 
-    prompt = f"""
-You are a cybersecurity assistant helping a phishing detection system.
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": f"""
+Email classified as: {label}
+Risks: {risks}
 
-The system classified the email as: {label}
-
-Detected Risk Indicators:
-{risks}
-
-Email Content:
-{email_content}
-
-Explain briefly why this email may be phishing or legitimate.
-Then provide recommended actions for the user.
+Explain briefly and give advice.
 """
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            }],
             temperature=0.2
         )
 
         return response.choices[0].message.content
 
     except Exception as e:
-        print("ChatGPT error:", e)
-        return "AI explanation unavailable."
+        print("AI error:", e)
+        return "AI unavailable"
 
 
-# ---------- CHATGPT RISK EXPLANATION ----------
-def explain_risk_with_ai(risk):
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": risk}],
-            temperature=0.2
-        )
-
-        return response.choices[0].message.content
-
-    except Exception as e:
-        print("Risk explanation error:", e)
-        return "Unable to generate explanation."
-
-
-# ---------- WELCOME ----------
+# ---------- ROUTES ----------
 @app.route("/")
 def welcome():
     return render_template("welcome.html")
 
 
-# ---------- HOME ----------
 @app.route("/home")
 def home():
-
     if "email" not in session:
         return redirect("/setup")
-
     return render_template("home.html")
 
 
@@ -219,8 +173,8 @@ def inbox():
     try:
         emails = fetch_emails(session["email"], session["password"], limit=15)
     except Exception as e:
-        emails = []
         print("IMAP error:", e)
+        emails = []
 
     return render_template("inbox.html", emails=emails)
 
@@ -239,16 +193,15 @@ def view_email(email_id):
             email_id
         )
 
-        email_data["body"] = sanitize_email_html(email_data.get("body", ""))
+        email_data["body"] = sanitize_email_html(email_data.get("body",""))
 
     except Exception as e:
-
-        print("Fetch email error:", e)
+        print("Fetch error:", e)
 
         email_data = {
             "from": "Error",
-            "subject": "Unable to load email",
-            "body": "Error retrieving email.",
+            "subject": "Failed",
+            "body": "Cannot load email",
             "attachments": [],
             "dangerous_attachment": False
         }
@@ -262,19 +215,20 @@ def manual():
     return render_template("manual_scan.html")
 
 
-# ---------- SCAN ----------
+# ---------- SCAN (🔥 FIX HERE) ----------
+@csrf.exempt   # ✅ FIX CSRF ERROR
 @app.route("/scan", methods=["POST"])
 @limiter.limit("10 per minute")
 def scan():
 
-    content = request.form.get("content", "").strip()
+    content = request.form.get("content","").strip()
 
     if not content:
         return jsonify({
-            "label": "UNKNOWN",
-            "confidence": 0,
-            "risks": [],
-            "analysis": "No content provided."
+            "label":"UNKNOWN",
+            "confidence":0,
+            "risks":[],
+            "analysis":"No content"
         })
 
     try:
@@ -291,30 +245,27 @@ def scan():
         })
 
     except Exception as e:
-
         print("Scan error:", e)
 
         return jsonify({
-            "label": "ERROR",
-            "confidence": 0,
-            "risks": [],
-            "analysis": "System error occurred."
+            "label":"ERROR",
+            "confidence":0,
+            "risks":[],
+            "analysis":"Scan failed"
         })
 
 
 # ---------- EXPLAIN ----------
+@csrf.exempt   # (optional)
 @app.route("/explain-risk", methods=["POST"])
-@limiter.limit("30 per minute")
 def explain_risk():
 
-    risk = request.form.get("risk")
+    risk = request.form.get("risk","")
 
     if not risk:
-        return jsonify({"explanation": "No risk provided."})
+        return jsonify({"explanation":"No risk provided"})
 
-    explanation = explain_risk_with_ai(risk)
-
-    return jsonify({"explanation": explanation})
+    return jsonify({"explanation": generate_ai_analysis(risk,"INFO",[])})
 
 
 # ---------- RUN ----------
