@@ -19,10 +19,24 @@
 
 <script>
 
-// Redirect to system after short loading screen
+// 🔥 Check session instead of blind redirect
 setTimeout(function(){
 
-    window.location.href = "/home";
+    fetch("/home", { method: "GET" })
+    .then(res => {
+
+        if(res.redirected){
+            // If redirected → not logged in
+            window.location.href = "/setup";
+        } else {
+            // If allowed → go home
+            window.location.href = "/home";
+        }
+
+    })
+    .catch(() => {
+        window.location.href = "/setup";
+    });
 
 }, 2000);
 

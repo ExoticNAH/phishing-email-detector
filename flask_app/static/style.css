@@ -27,9 +27,11 @@ h1, h2, h3 {
 .navbar {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 12px 20px;
   background: rgba(10,15,40,0.95);
   border-bottom: 1px solid rgba(100,140,255,0.3);
+  backdrop-filter: blur(6px);
 }
 
 .navbar a {
@@ -43,43 +45,55 @@ h1, h2, h3 {
   color: #ffffff;
 }
 
-.alert-box {
-  padding: 10px;
+
+/* ===================================================== */
+/* ===== WELCOME (FIXED CENTERING) ===== */
+/* ===================================================== */
+
+.welcome-screen {
+  height: 100vh;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
   text-align: center;
-  color: white;
+  padding: 20px;
 }
 
-
-/* ===================================================== */
-/* ===== WELCOME ===== */
-/* ===================================================== */
-
-.welcome-screen{
-  position: fixed;
-  width:100%;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
+.welcome-logo {
+  width: 140px;
+  margin-bottom: 25px;
+  animation: fadeIn 0.8s ease;
 }
 
-.welcome-logo{
-  width:220px;
-  margin-bottom:30px;
+.welcome-title {
+  font-size: 42px;
+  margin-bottom: 10px;
 }
 
-.welcome-title{
-  font-size:42px;
+.welcome-subtitle {
+  color: #c9d4ff;
+  margin-bottom: 10px;
 }
 
-.welcome-subtitle{
-  color:#c9d4ff;
+.loading-dots {
+  color: #9fb3ff;
+  font-size: 14px;
 }
 
-.loading-dots{
-  color:#9fb3ff;
+/* 🔥 animated dots */
+.loading-dots::after {
+  content: "...";
+  animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+  0% { content: "."; }
+  50% { content: ".."; }
+  100% { content: "..."; }
 }
 
 
@@ -104,53 +118,53 @@ h1, h2, h3 {
 /* ===== DASHBOARD ===== */
 /* ===================================================== */
 
-.dashboard-title{
-  display:flex;
-  justify-content:center;
-  gap:12px;
-  font-size:34px;
+.dashboard-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  font-size: 34px;
 }
 
-.subtitle{
-  color:#c9d4ff;
-  text-align:center;
-  margin-bottom:25px;
+.subtitle {
+  color: #c9d4ff;
+  text-align: center;
+  margin-bottom: 25px;
 }
 
-.session-info{
-  background:#111;
-  padding:10px;
-  border-radius:8px;
-  margin-bottom:20px;
-}
-
-.feature-list{
-  line-height:1.6;
+.system-desc {
+  text-align: center;
+  color: #9fb3ff;
 }
 
 
 /* STATUS */
 
-.status-grid{
-  display:grid;
+.status-grid {
+  display: grid;
   grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-  gap:20px;
+  gap: 20px;
 }
 
-.status-card{
+.status-card {
   background: rgba(10,20,50,0.85);
-  border-radius:12px;
-  padding:20px;
-  border:1px solid rgba(100,140,255,0.4);
-  text-align:center;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(100,140,255,0.4);
+  text-align: center;
+  transition: 0.2s;
 }
 
-.status-ok{
-  color:#7effb4;
+.status-card:hover {
+  transform: translateY(-4px);
 }
 
-.status-danger{
-  color:#ff6b6b;
+.status-ok {
+  color: #7effb4;
+}
+
+.status-danger {
+  color: #ff6b6b;
 }
 
 
@@ -167,15 +181,17 @@ h1, h2, h3 {
   cursor: pointer;
   text-decoration:none;
   border:none;
+  transition: 0.2s;
 }
 
 .btn:hover,
 .btn-primary:hover {
   transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
 }
 
-.btn-danger{
-  background:#ff4d4d;
+.btn-danger {
+  background: #ff4d4d;
 }
 
 
@@ -185,17 +201,18 @@ h1, h2, h3 {
 
 input,
 textarea {
-  width:100%;
-  border-radius:10px;
-  padding:12px;
+  width: 100%;
+  border-radius: 10px;
+  padding: 12px;
   background: rgba(10,15,40,0.7);
-  color:white;
-  border:1px solid rgba(120,150,255,0.4);
+  color: white;
+  border: 1px solid rgba(120,150,255,0.4);
 }
 
 input:focus,
-textarea:focus{
-  border-color:#6b8cff;
+textarea:focus {
+  border-color: #6b8cff;
+  outline: none;
 }
 
 
@@ -204,32 +221,34 @@ textarea:focus{
 /* ===================================================== */
 
 .email-item {
-  display:flex;
-  justify-content:space-between;
+  display: flex;
+  justify-content: space-between;
   background: rgba(10,20,50,0.85);
-  padding:15px;
-  margin-bottom:12px;
-  border-left:5px solid #6b8cff;
-  border-radius:10px;
-  cursor:pointer;
+  padding: 15px;
+  margin-bottom: 12px;
+  border-left: 5px solid #6b8cff;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.email-item:hover{
-  background:#1a1a2e;
+.email-item:hover {
+  background: #1a1a2e;
+  transform: translateX(4px);
 }
 
-.suspicious-email{
-  border-left:5px solid red;
+.suspicious-email {
+  border-left: 5px solid red;
 }
 
-.badge-risk{
-  color:#ff4d4d;
-  font-weight:bold;
+.badge-risk {
+  color: #ff4d4d;
+  font-weight: bold;
 }
 
-.badge-safe{
-  color:#00cc66;
-  font-weight:bold;
+.badge-safe {
+  color: #00cc66;
+  font-weight: bold;
 }
 
 
@@ -237,17 +256,17 @@ textarea:focus{
 /* ===== EMAIL VIEW ===== */
 /* ===================================================== */
 
-.email-body{
-  background:#111;
-  padding:15px;
-  border-radius:10px;
-  max-height:350px;
-  overflow:auto;
+.email-body {
+  background: #111;
+  padding: 15px;
+  border-radius: 10px;
+  max-height: 350px;
+  overflow: auto;
 }
 
-#email-content{
-  white-space:pre-line;
-  line-height:1.6;
+#email-content {
+  white-space: pre-line;
+  line-height: 1.6;
 }
 
 
@@ -255,17 +274,17 @@ textarea:focus{
 /* ===== HIGHLIGHT ===== */
 /* ===================================================== */
 
-.phishing-word{
-  background:rgba(255,80,80,0.3);
-  color:#ff6b6b;
-  font-weight:bold;
-  padding:2px 4px;
+.phishing-word {
+  background: rgba(255,80,80,0.3);
+  color: #ff6b6b;
+  font-weight: bold;
+  padding: 2px 4px;
 }
 
-.phishing-link{
-  color:#ffcc00;
-  font-weight:bold;
-  text-decoration:underline;
+.phishing-link {
+  color: #ffcc00;
+  font-weight: bold;
+  text-decoration: underline;
 }
 
 
@@ -274,21 +293,21 @@ textarea:focus{
 /* ===================================================== */
 
 .scan-box {
-  margin-top:20px;
-  padding:20px;
-  background:#111;
-  border-left:5px solid #6b8cff;
+  margin-top: 20px;
+  padding: 20px;
+  background: #111;
+  border-left: 5px solid #6b8cff;
 }
 
-.confidence-bar{
-  height:8px;
-  background:#333;
-  border-radius:10px;
+.confidence-bar {
+  height: 8px;
+  background: #333;
+  border-radius: 10px;
 }
 
-.confidence-fill{
-  height:100%;
-  background:linear-gradient(90deg,#6b8cff,#7effb4);
+.confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg,#6b8cff,#7effb4);
 }
 
 
@@ -296,8 +315,8 @@ textarea:focus{
 /* ===== UTIL ===== */
 /* ===================================================== */
 
-.loading{ color:#9fb3ff; }
-.error{ color:#ff6b6b; }
+.loading { color:#9fb3ff; }
+.error { color:#ff6b6b; }
 
 
 /* ===================================================== */

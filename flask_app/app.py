@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
 from flask_wtf import CSRFProtect
 
-# FIXED IMPORT PATHS
 from flask_app.imap_service import fetch_emails, fetch_email_by_id
 from flask_app.bert_predictor import predict_email
 
@@ -22,9 +21,12 @@ app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,   # MUST be True for Render HTTPS
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    PERMANENT_SESSION_LIFETIME=timedelta(minutes=15)
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=15),
+
+    # 🔥 IMPORTANT FIX (CSRF ERROR FIX)
+    WTF_CSRF_SSL_STRICT=False
 )
 
 # ---------- CSRF ----------
@@ -42,7 +44,6 @@ limiter = Limiter(
     app=app,
     default_limits=["200 per hour"]
 )
-
 
 # ---------- OPENAI ----------
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
@@ -215,8 +216,8 @@ def manual():
     return render_template("manual_scan.html")
 
 
-# ---------- SCAN (🔥 FIX HERE) ----------
-@csrf.exempt   # ✅ FIX CSRF ERROR
+# ---------- SCAN ----------
+@csrf.exempt
 @app.route("/scan", methods=["POST"])
 @limiter.limit("10 per minute")
 def scan():
@@ -256,7 +257,7 @@ def scan():
 
 
 # ---------- EXPLAIN ----------
-@csrf.exempt   # (optional)
+@csrf.exempt
 @app.route("/explain-risk", methods=["POST"])
 def explain_risk():
 
