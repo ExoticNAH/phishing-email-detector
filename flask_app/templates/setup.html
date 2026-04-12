@@ -7,12 +7,12 @@
 
     <p class="subtitle" style="text-align:center;">
         Enter your Gmail account to analyze emails for phishing threats.
-        Your credentials are stored only temporarily for this session and are not saved on the server.
+        Your credentials are used only for this session and are not stored permanently.
     </p>
 
-    <form method="POST">
+    <form method="POST" autocomplete="off">
 
-        <!-- ✅ CSRF TOKEN (IMPORTANT) -->
+        <!-- ✅ CSRF TOKEN -->
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <label>Email Address</label>
@@ -32,6 +32,11 @@
             required
             autocomplete="new-password"
         >
+
+        <!-- ✅ Extra safety hint -->
+        <small style="color:#888;">
+            Use a Gmail App Password, not your main password.
+        </small>
 
         <div class="actions">
             <button type="submit" class="btn-primary" style="width:100%;">
@@ -73,10 +78,18 @@
     <h3>🔒 Privacy Notice</h3>
 
     <p class="system-desc">
-        This system does not permanently store your email credentials.
-        Your login is kept only during the active session and will be cleared automatically when you logout or close the browser.
+        Your credentials are stored only in a temporary session and automatically removed after logout or inactivity (15 minutes).
+        The system does not store your email data permanently.
     </p>
 
+</div>
+
+
+<!-- ✅ Session Timeout Warning -->
+<div class="card" style="margin-top:20px;">
+    <p class="system-desc" style="text-align:center;">
+        ⏳ For security, your session will expire after a short period of inactivity.
+    </p>
 </div>
 
 {% endblock %}

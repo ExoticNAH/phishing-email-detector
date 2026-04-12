@@ -22,13 +22,18 @@ app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,   # IMPORTANT for HTTPS (Render)
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE="Lax",
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=15)
 )
 
 # ---------- CSRF PROTECTION ----------
 csrf = CSRFProtect(app)
+
+# ---------- SESSION AUTO-REFRESH ----------
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
 
 
 # ---------- RATE LIMITER ----------
@@ -176,7 +181,7 @@ def home():
     return render_template("home.html")
 
 
-# ---------- SETUP (LOGIN EMAIL) ----------
+# ---------- SETUP ----------
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
 
@@ -185,7 +190,7 @@ def setup():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # 🔥 PREVENT SESSION FIXATION
+        # 🔥 SESSION FIXATION PROTECTION
         session.clear()
 
         session["email"] = email
@@ -200,7 +205,6 @@ def setup():
 # ---------- LOGOUT ----------
 @app.route("/logout")
 def logout():
-
     session.clear()
     return redirect("/")
 
@@ -214,7 +218,6 @@ def inbox():
 
     try:
         emails = fetch_emails(session["email"], session["password"], limit=15)
-
     except Exception as e:
         emails = []
         print("IMAP error:", e)
@@ -299,7 +302,7 @@ def scan():
         })
 
 
-# ---------- EXPLAIN RISK ----------
+# ---------- EXPLAIN ----------
 @app.route("/explain-risk", methods=["POST"])
 @limiter.limit("30 per minute")
 def explain_risk():
