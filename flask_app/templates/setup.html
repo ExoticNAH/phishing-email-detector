@@ -10,6 +10,13 @@
         <strong>Your credentials are NOT stored permanently.</strong>
     </p>
 
+    <!-- 🔥 ERROR MESSAGE -->
+    {% if error %}
+    <div class="error-box">
+        ⚠ {{ error }}
+    </div>
+    {% endif %}
+
     <form method="POST" autocomplete="off" style="max-width:500px; margin:0 auto;">
 
         <!-- CSRF -->
@@ -24,6 +31,7 @@
             required
             autocomplete="email"
             class="input-field"
+            value="{{ request.form.email or '' }}"
         >
 
         <!-- PASSWORD -->

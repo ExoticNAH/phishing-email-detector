@@ -162,7 +162,7 @@ def analyze_domains(text):
 
 
 # =====================================================
-# ---------- AI ANALYSIS (FIXED) ----------
+# ---------- AI ANALYSIS ----------
 # =====================================================
 def generate_ai_analysis(email_content, label, risks):
 
@@ -217,41 +217,9 @@ Do NOT contradict the classification.
 
 
 # =====================================================
-# ---------- EXPLAIN RISK (FIXED) ----------
-# =====================================================
-def explain_specific_risk(risk):
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{
-                "role": "user",
-                "content": f"""
-You are a cybersecurity expert.
-
-Explain this phishing indicator clearly:
-{risk}
-
-Return:
-Explanation: short explanation
-Advice:
-- action
-- action
-"""
-            }],
-            temperature=0.2,
-            max_tokens=150
-        )
-
-        return response.choices[0].message.content.strip()
-
-    except Exception as e:
-        return f"Error: {str(e)}"
-
-
-# =====================================================
 # ---------- ROUTES ----------
 # =====================================================
+
 @app.route("/")
 def welcome():
     return render_template("welcome.html")
@@ -264,17 +232,40 @@ def home():
     return render_template("home.html")
 
 
+# 🔥 FIXED SETUP ROUTE
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
 
     if request.method == "POST":
 
-        session.clear()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "").strip()
 
-        session["email"] = request.form.get("email")
-        session["password"] = request.form.get("password")
+        # ---------- VALIDATION ----------
+        if not email or not password:
+            return render_template("setup.html", error="Please fill all fields")
 
-        return redirect("/home")
+        if "@" not in email:
+            return render_template("setup.html", error="Invalid email format")
+
+        try:
+            # 🔐 VALIDATE IMAP LOGIN FIRST
+            fetch_emails(email, password, limit=1)
+
+            # ✅ ONLY CREATE SESSION IF VALID
+            session.clear()
+            session["email"] = email
+            session["password"] = password
+
+            return redirect("/home")
+
+        except Exception as e:
+            print("Login failed:", e)
+
+            return render_template(
+                "setup.html",
+                error="Invalid email or app password"
+            )
 
     return render_template("setup.html")
 
@@ -386,19 +377,7 @@ def scan():
 
 
 # =====================================================
-# ---------- EXPLAIN ----------
-# =====================================================
-@csrf.exempt
-@app.route("/explain-risk", methods=["POST"])
-def explain_risk():
-
-    risk = request.form.get("risk","")
-
-    explanation = explain_specific_risk(risk)
-
-    return jsonify({"explanation": explanation})
-
-
 # ---------- RUN ----------
+# =====================================================
 if __name__ == "__main__":
     app.run()
