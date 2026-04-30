@@ -39,11 +39,14 @@ def make_session_permanent():
 @app.after_request
 def apply_security_headers(response):
     response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self'; "
-        "style-src 'self' https://fonts.googleapis.com; "
-        "font-src https://fonts.gstatic.com; "
-        "img-src 'self' data:;"
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self' https://fonts.googleapis.com; "
+    "font-src https://fonts.gstatic.com; "
+    "img-src 'self' data:; "
+    "frame-ancestors 'none'; "
+    "form-action 'self';"
+)
     )
 
     response.headers["X-Frame-Options"] = "DENY"
