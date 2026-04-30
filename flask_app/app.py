@@ -14,6 +14,7 @@ import re
 from urllib.parse import urlparse
 from datetime import timedelta
 
+
 app = Flask(__name__)
 
 # ---------- SECURITY CONFIG ----------
@@ -34,15 +35,11 @@ def make_session_permanent():
     session.permanent = True
 
 
-# =====================================================
-# ---------- FINAL SECURITY HEADERS (FIXED CSP) ----------
-# =====================================================
+# ✅ ONLY ADD THIS (SECURITY HEADERS)
 @app.after_request
 def apply_security_headers(response):
-
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self'; "
         "style-src 'self' https://fonts.googleapis.com; "
         "font-src https://fonts.gstatic.com; "
         "img-src 'self' data:; "
@@ -55,10 +52,8 @@ def apply_security_headers(response):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
 
     return response
-# --------------------------------------------------
 
 
 # ---------- RATE LIMIT ----------
@@ -215,6 +210,8 @@ Advice:
 - action 1
 - action 2
 - action 3
+
+Do NOT contradict the classification.
 """
             }],
             temperature=0.2,
@@ -241,12 +238,12 @@ Advice:
 
 
 # =====================================================
-# ---------- ROUTES (FIXED FLOW) ----------
+# ---------- ROUTES (ONLY FIXED HERE) ----------
 # =====================================================
 
 @app.route("/")
 def welcome():
-    # ✅ FIX: prevent stuck page
+    # 🔥 FIX: backend handles flow, no more stuck
     if "email" in session:
         return redirect("/home")
     return render_template("welcome.html")
@@ -282,8 +279,13 @@ def setup():
 
             return redirect("/home")
 
-        except:
-            return render_template("setup.html", error="Invalid credentials")
+        except Exception as e:
+            print("Login failed:", e)
+
+            return render_template(
+                "setup.html",
+                error="Invalid email or app password"
+            )
 
     return render_template("setup.html")
 
@@ -302,7 +304,8 @@ def inbox():
 
     try:
         emails = fetch_emails(session["email"], session["password"], limit=15)
-    except:
+    except Exception as e:
+        print("IMAP error:", e)
         emails = []
 
     return render_template("inbox.html", emails=emails)
@@ -323,12 +326,15 @@ def view_email(email_id):
 
         email_data["body"] = sanitize_email_html(email_data.get("body", ""))
 
-    except:
+    except Exception as e:
+        print("Fetch error:", e)
+
         email_data = {
             "from": "Error",
             "subject": "Failed",
             "body": "Cannot load email",
-            "attachments": []
+            "attachments": [],
+            "dangerous_attachment": False
         }
 
     return render_template("email_view.html", email=email_data)
