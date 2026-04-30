@@ -42,7 +42,8 @@ def make_session_permanent():
 def apply_security_headers(response):
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "style-src 'self' https://fonts.googleapis.com; "
+        "script-src 'self' 'unsafe-inline'; "   # ✅ FIX HERE
+        "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; "
         "font-src https://fonts.gstatic.com; "
         "img-src 'self' data:; "
         "object-src 'none'; "
