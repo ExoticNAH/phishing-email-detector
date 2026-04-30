@@ -34,7 +34,9 @@ def make_session_permanent():
     session.permanent = True
 
 
-# ✅ ---------- FINAL FIXED SECURITY HEADERS ----------
+# =====================================================
+# ---------- FINAL SECURITY HEADERS (FIXED CSP) ----------
+# =====================================================
 @app.after_request
 def apply_security_headers(response):
 
@@ -239,11 +241,14 @@ Advice:
 
 
 # =====================================================
-# ---------- ROUTES ----------
+# ---------- ROUTES (FIXED FLOW) ----------
 # =====================================================
 
 @app.route("/")
 def welcome():
+    # ✅ FIX: prevent stuck page
+    if "email" in session:
+        return redirect("/home")
     return render_template("welcome.html")
 
 
@@ -277,13 +282,8 @@ def setup():
 
             return redirect("/home")
 
-        except Exception as e:
-            print("Login failed:", e)
-
-            return render_template(
-                "setup.html",
-                error="Invalid email or app password"
-            )
+        except:
+            return render_template("setup.html", error="Invalid credentials")
 
     return render_template("setup.html")
 
@@ -302,8 +302,7 @@ def inbox():
 
     try:
         emails = fetch_emails(session["email"], session["password"], limit=15)
-    except Exception as e:
-        print("IMAP error:", e)
+    except:
         emails = []
 
     return render_template("inbox.html", emails=emails)
@@ -324,15 +323,12 @@ def view_email(email_id):
 
         email_data["body"] = sanitize_email_html(email_data.get("body", ""))
 
-    except Exception as e:
-        print("Fetch error:", e)
-
+    except:
         email_data = {
             "from": "Error",
             "subject": "Failed",
             "body": "Cannot load email",
-            "attachments": [],
-            "dangerous_attachment": False
+            "attachments": []
         }
 
     return render_template("email_view.html", email=email_data)

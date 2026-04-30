@@ -37,9 +37,9 @@
     animation: fadeIn 1s ease-in-out;
 }
 
-/* LOGO - BIG BUT CLEAN */
+/* LOGO */
 .welcome-logo {
-    width: 180px;   /* 🔥 Perfect size (not too huge) */
+    width: 180px;
     max-width: 40%;
     margin-bottom: 20px;
 
@@ -80,26 +80,10 @@
 
 
 <script>
-
-// 🔥 SMART SESSION CHECK
-setTimeout(function(){
-
-    fetch("/home", { method: "GET" })
-    .then(res => {
-
-        if(res.redirected){
-            window.location.href = "/setup";
-        } else {
-            window.location.href = "/home";
-        }
-
-    })
-    .catch(() => {
-        window.location.href = "/setup";
-    });
-
+// ✅ SIMPLE + RELIABLE REDIRECT (NO BUG)
+setTimeout(function () {
+    window.location.href = "/setup";
 }, 2000);
-
 </script>
 
 {% endblock %}
