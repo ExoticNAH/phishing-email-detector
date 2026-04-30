@@ -35,27 +35,6 @@ def make_session_permanent():
     session.permanent = True
 
 
-# ✅ ONLY ADD THIS (SECURITY HEADERS)
-@app.after_request
-def apply_security_headers(response):
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "style-src 'self' https://fonts.googleapis.com; "
-        "font-src https://fonts.gstatic.com; "
-        "img-src 'self' data:; "
-        "object-src 'none'; "
-        "base-uri 'self'; "
-        "frame-ancestors 'none'; "
-        "form-action 'self';"
-    )
-
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-
-    return response
-
-
 # ---------- RATE LIMIT ----------
 limiter = Limiter(
     get_remote_address,
@@ -238,14 +217,11 @@ Do NOT contradict the classification.
 
 
 # =====================================================
-# ---------- ROUTES (ONLY FIXED HERE) ----------
+# ---------- ROUTES ----------
 # =====================================================
 
 @app.route("/")
 def welcome():
-    # 🔥 FIX: backend handles flow, no more stuck
-    if "email" in session:
-        return redirect("/home")
     return render_template("welcome.html")
 
 
@@ -256,6 +232,7 @@ def home():
     return render_template("home.html")
 
 
+# 🔥 FIXED SETUP ROUTE
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
 
@@ -264,6 +241,7 @@ def setup():
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "").strip()
 
+        # ---------- VALIDATION ----------
         if not email or not password:
             return render_template("setup.html", error="Please fill all fields")
 
@@ -271,8 +249,10 @@ def setup():
             return render_template("setup.html", error="Invalid email format")
 
         try:
+            # 🔐 VALIDATE IMAP LOGIN FIRST
             fetch_emails(email, password, limit=1)
 
+            # ✅ ONLY CREATE SESSION IF VALID
             session.clear()
             session["email"] = email
             session["password"] = password
