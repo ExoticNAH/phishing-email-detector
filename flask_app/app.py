@@ -14,7 +14,6 @@ import re
 from urllib.parse import urlparse
 from datetime import timedelta
 
-
 app = Flask(__name__)
 
 # ---------- SECURITY CONFIG ----------
@@ -35,19 +34,11 @@ def make_session_permanent():
     session.permanent = True
 
 
-# ✅ ---------- ADD THIS (SECURITY HEADERS) ----------
+# ✅ ---------- FIXED SECURITY HEADERS ----------
 @app.after_request
 def apply_security_headers(response):
-    response.headers["Content-Security-Policy"] = (
-    "default-src 'self'; "
-    "script-src 'self'; "
-    "style-src 'self' https://fonts.googleapis.com; "
-    "font-src https://fonts.gstatic.com; "
-    "img-src 'self' data:; "
-    "frame-ancestors 'none'; "
-    "form-action 'self';"
-)
-    )
+
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none'; form-action 'self';"
 
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -212,8 +203,6 @@ Advice:
 - action 1
 - action 2
 - action 3
-
-Do NOT contradict the classification.
 """
             }],
             temperature=0.2,
