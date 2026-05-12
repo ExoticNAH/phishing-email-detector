@@ -33,16 +33,17 @@ csrf = CSRFProtect(app)
 @app.before_request
 def make_session_permanent():
     session.permanent = True
-    
-# =====================================================   
-# --------✅ ONLY ADD THIS (SECURITY HEADERS)---------
+
+
+# =====================================================
+# ---------- SECURITY HEADERS ----------
 # =====================================================
 
 @app.after_request
 def apply_security_headers(response):
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline'; "   # ✅ FIX HERE
+        "script-src 'self' 'unsafe-inline'; "
         "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; "
         "font-src https://fonts.gstatic.com; "
         "img-src 'self' data:; "
@@ -241,6 +242,64 @@ Do NOT contradict the classification.
 
 
 # =====================================================
+# ---------- EXPLAIN RISK ----------
+# =====================================================
+@csrf.exempt
+@app.route("/explain-risk", methods=["POST"])
+@limiter.limit("20 per minute")
+def explain_risk():
+
+    risk = request.form.get("risk", "").strip()
+
+    if not risk:
+        return jsonify({
+            "explanation": "No risk provided."
+        })
+
+    try:
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": f"""
+You are a cybersecurity expert.
+
+Explain this phishing risk in simple terms.
+
+Risk:
+{risk}
+
+Return STRICTLY:
+
+Explanation:
+Short explanation of the risk.
+
+Advice:
+- action 1
+- action 2
+"""
+            }],
+            temperature=0.2,
+            max_tokens=150
+        )
+
+        result = response.choices[0].message.content.strip()
+
+        return jsonify({
+            "explanation": result
+        })
+
+    except Exception as e:
+
+        print("Explain risk error:", e)
+
+        return jsonify({
+            "explanation": "AI explanation unavailable."
+        })
+
+
+# =====================================================
 # ---------- ROUTES ----------
 # =====================================================
 
@@ -256,7 +315,6 @@ def home():
     return render_template("home.html")
 
 
-# 🔥 FIXED SETUP ROUTE
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
 
@@ -265,7 +323,6 @@ def setup():
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "").strip()
 
-        # ---------- VALIDATION ----------
         if not email or not password:
             return render_template("setup.html", error="Please fill all fields")
 
@@ -273,10 +330,9 @@ def setup():
             return render_template("setup.html", error="Invalid email format")
 
         try:
-            # 🔐 VALIDATE IMAP LOGIN FIRST
+
             fetch_emails(email, password, limit=1)
 
-            # ✅ ONLY CREATE SESSION IF VALID
             session.clear()
             session["email"] = email
             session["password"] = password
